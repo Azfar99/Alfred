@@ -1,0 +1,14 @@
+# User-specific runtime state and private notes
+/data/
+/temp/
+
+# Generated build and evaluation scratch (includes large CUDA archives)
+/build/
+/Alfred-stage.exe
+/Alfred-test.exe
+
+# IDE and local environment files
+.vs/
+*.user
+*.suo
+*.pdb
