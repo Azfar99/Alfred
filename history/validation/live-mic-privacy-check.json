@@ -1,0 +1,23 @@
+[
+  {
+    "Check": "mic-off startup",
+    "State": "paused",
+    "Paused": true,
+    "WakeReady": false,
+    "Pass": true
+  },
+  {
+    "Check": "listen while paused",
+    "State": "notice",
+    "Paused": true,
+    "WakeReady": false,
+    "Pass": true
+  },
+  {
+    "Check": "mic-off persists after restart",
+    "State": "paused",
+    "Paused": true,
+    "WakeReady": false,
+    "Pass": true
+  }
+]

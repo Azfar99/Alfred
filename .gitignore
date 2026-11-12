@@ -1,14 +1,20 @@
-# User-specific runtime state and private notes
-/data/
+# Private memory dump and temporary runtime/audio
+/sensitive-local/
 /temp/
-
-# Generated build and evaluation scratch (includes large CUDA archives)
+/.backup-verification/
+# Generated evaluation/build/download caches (meaningful snapshots copied to history/)
 /build/
 /Alfred-stage.exe
 /Alfred-test.exe
-
-# IDE and local environment files
+# Optional reproducible upstream GPU payload; recovery manifest pins hashes/URLs
+/engine/cuda/
+/models/ggml-large-v3-turbo-q5_0.bin
+# Local environment
 .vs/
 *.user
 *.suo
 *.pdb
+# Audit log noise and generated pre-backup full inventory
+/backup-audit/*errors.txt
+/backup-audit/scan-*.txt
+/backup-audit/consolidated-inventory.csv

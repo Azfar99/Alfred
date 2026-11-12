@@ -1,6 +1,6 @@
 # Alfred
 
-Alfred is a lightweight Windows voice assistant. The application is a native WinForms/.NET Framework program; speech recognition uses Windows `System.Speech`, with Bengali transcription handled on demand by the bundled `whisper.cpp` runtime and local GGML models.
+Alfred is a lightweight Windows voice assistant. The application is a native WinForms/.NET Framework program; wake detection uses sherpa-onnx Zipformer int8 and Silero VAD. Multilingual transcription runs on demand through CUDA whisper.cpp with a verified large-v3-turbo Q5 model; a CPU fallback is retained. Windows System.Speech provides the installed TTS voice.
 
 ## Repository contents
 
@@ -42,3 +42,10 @@ The script compiles `source/*.cs`, runs the app's built-in command checks, then 
 ## Model and dependency licensing
 
 The model binaries and `engine/Release/` contain third-party artifacts. The local project folder did not include provenance/license records for every binary, especially the Bengali-tuned model. Check the upstream model card and notices before redistributing those artifacts. The Alfred source has no project-level `LICENSE` file, so repository visibility alone does not grant reuse rights.
+## Windows installer
+
+A standard offline setup is built with installer/package.ps1 and saved under releases/. It supports Windows10 1809+/11 x64 with .NET4.7.2+. The setup includes the CPU speech model and voice runtime, plus the Microsoft-signed VC++ prerequisite. NVIDIA/Python/API keys are not required. This CPU edition has different speed/accuracy from the CUDA Turbo development build.
+
+Download the *-Setup.exe from GitHub Releases after publication; the GitHub source ZIP is for development. Choose a writable install folder. Start Menu shortcut, optional desktop shortcut and uninstall are included. Notes/settings stay in the chosen folder and survive updates/uninstall. No boot autostart.
+
+See installer/README.md for repeatable packaging. Generated binaries/checksums should be GitHub Release assets and are ignored by Git. This build is unsigned; clean-PC QA remains outstanding.

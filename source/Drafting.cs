@@ -14,6 +14,10 @@ namespace Alfred {
         void Replace(string expected,string text);
         void Send(string expected);
     }
+    interface IDraftAppendTarget { void Append(string expected,string suffix); }
+    sealed class DraftSendUncertainException : Exception {
+        public DraftSendUncertainException():base("পাঠানোর নির্দেশ দিয়েছি, কিন্তু মেসেজ বক্স খালি হয়েছে কি না নিশ্চিত হইনি। চ্যাটে দেখে নাও; আবার নিজে থেকে পাঠাব না"){}
+    }
     sealed class DraftSession {
         IDraftTarget target;
         bool dictating;
@@ -51,7 +55,13 @@ namespace Alfred {
             previousText=Text;
             Text=text;
         }
-        public void Append(string text){Rewrite(Text+(Text.Length>0&&!Char.IsWhiteSpace(Text[Text.Length-1])?" ":"")+text);}
+        public void Append(string text){
+            Require();
+            string suffix=(Text.Length>0&&!Char.IsWhiteSpace(Text[Text.Length-1])?" ":"")+text;
+            IDraftAppendTarget appender=target as IDraftAppendTarget;
+            if(appender==null){Rewrite(Text+suffix);return;}
+            string before=Text;appender.Append(before,suffix);previousText=before;Text=before+suffix;
+        }
         public void NewLine(){Rewrite(Text+"\n");}
         public void Undo(){
             Require();
@@ -85,16 +95,18 @@ namespace Alfred {
             if(dictating)throw new Exception("আগে ডিক্টেশন শেষ করে খসড়া দেখে নাও");
             Require();
             if(String.IsNullOrWhiteSpace(Text))throw new Exception("খসড়ায় লেখা নেই");
-            target.Send(Text);
+            try{target.Send(Text);}
+            catch(DraftSendUncertainException){target=null;Text="";previousText=null;dictating=false;throw;}
             target=null;
             Text="";
             previousText=null;
         }
-        sealed class FakeTarget : IDraftTarget {
-            public string Value="";public int Sends;public bool Current=true;
+        sealed class FakeTarget : IDraftTarget,IDraftAppendTarget {
+            public string Value="";public int Sends,Appends;public bool Current=true,UncertainSend;
             public string Read(){if(!Current)throw new Exception("Wrong target");return Value;}
             public void Replace(string expected,string text){if(Read()!=expected)throw new Exception("Changed text");Value=text;}
-            public void Send(string expected){if(Read()!=expected)throw new Exception("Changed text");Sends++;Value="";}
+            public void Append(string expected,string suffix){if(Read()!=expected)throw new Exception("Changed text");Appends++;Value+=suffix;}
+            public void Send(string expected){if(Read()!=expected)throw new Exception("Changed text");Sends++;if(UncertainSend)throw new DraftSendUncertainException();Value="";}
         }
         public static string SelfTest(){
             FakeTarget f=new FakeTarget();DraftSession d=new DraftSession();d.Start(f,"আমি বিকাল থেকে কীবোর্ডও টাচ করি নাই",false);
@@ -113,21 +125,35 @@ namespace Alfred {
             f.Value="";d.Start(f,"প্রথম বাক্য। দ্বিতীয় বাক্য।",false);d.DeleteSentence();if(d.Text!="প্রথম বাক্য।")throw new Exception("Sentence removal failed");d.Clear();
             bool name1=ChatContactSelector.NameMatchesForTest("Ayesha\nlast seen", "Ayesha"),name2=ChatContactSelector.NameMatchesForTest("রিমা, active now","রিমা"),name3=ChatContactSelector.NameMatchesForTest("Ayesha\nlast seen","আয়েশা"),name4=ChatContactSelector.NameMatchesForTest("আয়েশা, active now","Ayesha"),name5=ChatContactSelector.NameMatchesForTest("Ayesha Khan","Ayesha");
             if(!name1||!name2||!name3||!name4||name5)throw new Exception("Contact matching was not exact: "+name1+","+name2+","+name3+","+name4+","+name5);
-            return "PASS draft review/edit state, exact Bengali/English chat-name matching, changed-target blocking, explicit single send and clearing"+Environment.NewLine;
+            if(f.Appends<2)throw new Exception("Dictation did not use incremental appends");
+            f.Value="";f.UncertainSend=true;d.Start(f,"check delivery",false);int beforeSend=f.Sends;
+            blocked=false;try{d.Send();}catch(DraftSendUncertainException){blocked=true;}
+            if(!blocked||d.HasDraft||f.Sends!=beforeSend+1)throw new Exception("Uncertain send retained a repeatable draft");
+            blocked=false;try{d.Send();}catch{blocked=true;}if(!blocked||f.Sends!=beforeSend+1)throw new Exception("Uncertain send was retried");
+            if(!ChatPlatform.IsSupportedSite("https://web.whatsapp.com/")||!ChatPlatform.IsSupportedSite("www.facebook.com/messages/t/123")||ChatPlatform.IsSupportedSite("https://facebook.com.attacker.test/")||ChatPlatform.IsSupportedSite("https://example.com/?q=instagram")||ChatPlatform.IsSupportedSite("https://facebook.com@attacker.test/"))throw new Exception("Chat domain boundary check failed");
+            return "PASS draft review/edit, incremental append, exact bilingual contact matching, trusted chat domains, single confirmed send and uncertain-send blocking"+Environment.NewLine;
         }
     }
     static class ChatPlatform {
-        static readonly Regex Site=new Regex(@"facebook|messenger|instagram|whatsapp",RegexOptions.IgnoreCase|RegexOptions.Compiled);
+        public static bool IsBrowser(string process){return Regex.IsMatch(process??"",@"^(?:chrome|msedge|firefox|brave|opera|vivaldi)$",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);}
+        public static bool IsSupportedSite(string address){
+            string value=(address??"").Trim();if(value.Length==0||Regex.IsMatch(value,@"\s"))return false;
+            if(value.IndexOf("://",StringComparison.Ordinal)<0)value="https://"+value;
+            Uri uri;if(!Uri.TryCreate(value,UriKind.Absolute,out uri)||(uri.Scheme!="https"&&uri.Scheme!="http")||uri.UserInfo.Length>0)return false;
+            string host=uri.IdnHost.TrimEnd('.').ToLowerInvariant();
+            foreach(string domain in new[]{"facebook.com","messenger.com","instagram.com","whatsapp.com"})if(host==domain||host.EndsWith("."+domain,StringComparison.Ordinal))return true;
+            return false;
+        }
         static readonly Regex ChatProcess=new Regex(@"^(?:whatsapp|instagram|messenger|facebook)(?:\.|$)",RegexOptions.IgnoreCase|RegexOptions.Compiled);
         public static bool IsSupported(IntPtr window,string process,string title){
             if(ChatProcess.IsMatch(process??""))return true;
-            bool browser=process=="chrome"||process=="msedge"||process=="firefox";
+            bool browser=ChatPlatform.IsBrowser(process);
             if(!browser)return false;
-            if(Site.IsMatch(title??""))return true;
+            // A page title can contain a service name on an unrelated site; require its address host.
             try{
                 AutomationElement root=AutomationElement.FromHandle(window);
                 AutomationElementCollection edits=root.FindAll(TreeScope.Descendants,new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.Edit));
-                foreach(AutomationElement e in edits){string name=e.Current.Name??"";if(!Regex.IsMatch(name,@"address and search bar|address bar",RegexOptions.IgnoreCase))continue;object p;if(e.TryGetCurrentPattern(ValuePattern.Pattern,out p)&&Site.IsMatch(((ValuePattern)p).Current.Value??""))return true;}
+                foreach(AutomationElement e in edits){string name=e.Current.Name??"";if(!Regex.IsMatch(name,@"address|location|ঠিকানা",RegexOptions.IgnoreCase))continue;object p;if(e.TryGetCurrentPattern(ValuePattern.Pattern,out p)&&IsSupportedSite(((ValuePattern)p).Current.Value))return true;}
             }catch{}
             return false;
         }
@@ -203,7 +229,7 @@ namespace Alfred {
             return requested.Trim();
         }
     }
-    sealed class FocusedTextTarget : IDraftTarget {
+    sealed class FocusedTextTarget : IDraftTarget,IDraftAppendTarget {
         readonly AutomationElement field;
         readonly IntPtr window;
         readonly string title;
@@ -220,11 +246,11 @@ namespace Alfred {
             uint pid;Native.GetWindowThreadProcessId(w,out pid);if(pid==(uint)Program.ProcessId)throw new Exception("চ্যাট বা ডকুমেন্টের লেখার বক্স বেছে নাও");
             string process;using(Process p=Process.GetProcessById((int)pid))process=p.ProcessName.ToLowerInvariant();
             if(Regex.IsMatch(process,@"^(cmd|powershell|pwsh|windowsterminal|credentialuibroker|logonui|keepass|1password|bitwarden)$"))throw new Exception("এই অ্যাপে ভয়েস টাইপিং চালু করা হয়নি");
-            bool browser=process=="chrome"||process=="msedge"||process=="firefox";
+            bool browser=ChatPlatform.IsBrowser(process);
             bool supportedChat=ChatPlatform.IsSupported(w,process,WindowTitle(w));
             if(chatOnly&&!supportedChat)throw new Exception("Instagram, Facebook/Messenger বা WhatsApp-এর চ্যাটটি সামনে আনো");
             AutomationElement e=EditableFocus();
-            if(chatOnly||e==null||(e!=null&&Regex.IsMatch(e.Current.Name??"",@"address and search bar|address bar",RegexOptions.IgnoreCase))){
+            if(e==null||(e!=null&&Regex.IsMatch(e.Current.Name??"",@"\baddress\b|\blocation\b|ঠিকানা",RegexOptions.IgnoreCase))||(chatOnly&&!IsMessageField(e))){
                 if(supportedChat){
                     AutomationElementCollection edits=AutomationElement.FromHandle(w).FindAll(TreeScope.Descendants,Condition.TrueCondition);
                     AutomationElement found=null;int count=0;
@@ -235,11 +261,12 @@ namespace Alfred {
                 }
             }
             if(e==null||e.Current.ProcessId!=(int)pid||e.Current.IsPassword||!e.Current.IsEnabled||e.Current.IsOffscreen)throw new Exception("আগে মেসেজ বা ডকুমেন্টের লেখার বক্সে একবার ক্লিক করো");
-            string name=e.Current.Name??"";if(Regex.IsMatch(name,@"address and search bar|address bar|password",RegexOptions.IgnoreCase))throw new Exception("ঠিকানার বক্সে নয়, লেখার বক্সে ক্লিক করো");
+            string name=e.Current.Name??"";if(Regex.IsMatch(name,@"\baddress\b|\blocation\b|ঠিকানা|password",RegexOptions.IgnoreCase))throw new Exception("ঠিকানার বক্সে নয়, লেখার বক্সে ক্লিক করো");
             bool b=browser;
             bool m=Regex.IsMatch(name,@"message|type a message|send a message|reply|মেসেজ|বার্তা|চ্যাট",RegexOptions.IgnoreCase);
             FocusedTextTarget result=new FocusedTextTarget(e,w,WindowTitle(w),b,m,supportedChat,cancelled);result.Read();return result;
         }
+        static bool IsMessageField(AutomationElement e){return e!=null&&Regex.IsMatch(e.Current.Name??"",@"message|type a message|send a message|reply|মেসেজ|বার্তা|চ্যাট",RegexOptions.IgnoreCase);}
         static AutomationElement EditableFocus(){
             AutomationElement e=AutomationElement.FocusedElement;
             for(int n=0;e!=null&&n<5;n++,e=TreeWalker.ControlViewWalker.GetParent(e)){
@@ -265,12 +292,26 @@ namespace Alfred {
             if(text.Length>32000)throw new Exception("একটি খসড়ায় সর্বোচ্চ বত্রিশ হাজার অক্ষর লেখো");
             InputKeys.CheckModifiers();Verify();if(expected.Length>0)InputKeys.SelectAll();if(cancelled())throw new OperationCanceledException();
             if(text.Length==0)InputKeys.Backspace();else InputKeys.Type(text);
-            Thread.Sleep(120);if(Read()!=Canonical(text))throw new Exception("লেখা পুরোটা বসেছে কি না যাচাই হয়নি। চ্যাটে দেখে নাও; পাঠাইনি");
+            if(!WaitForText(text,1800))throw new Exception("লেখা পুরোটা বসেছে কি না যাচাই হয়নি। চ্যাটে দেখে নাও; পাঠাইনি");
+        }
+        bool WaitForText(string expected,int timeout){
+            string wanted=Canonical(expected);Stopwatch watch=Stopwatch.StartNew();
+            do{if(Read()==wanted)return true;if(cancelled())throw new OperationCanceledException();Thread.Sleep(40);}while(watch.ElapsedMilliseconds<timeout);
+            return false;
+        }
+        public void Append(string expected,string suffix){
+            if(Read()!=Canonical(expected))throw new Exception("বক্সের লেখা বদলেছে—আগে এই লেখাটা নাও বলো");
+            if(expected.Length+suffix.Length>32000)throw new Exception("একটি খসড়ায় সর্বোচ্চ বত্রিশ হাজার অক্ষর লেখো");
+            InputKeys.CheckModifiers();Verify();InputKeys.End();Verify();if(cancelled())throw new OperationCanceledException();InputKeys.Type(suffix);
+            if(!WaitForText(expected+suffix,1800))throw new Exception("নতুন কথাগুলো বসেছে কি না নিশ্চিত হইনি। চ্যাটে দেখে নাও; পাঠাইনি");
         }
         public void Send(string expected){
             if(!supportedChat||!messageField)throw new Exception("পাঠানো কেবল চেনা চ্যাট অ্যাপের মেসেজ বক্সে চালু; আগে সঠিক চ্যাটটি বেছে নাও");
             if(Read()!=Canonical(expected))throw new Exception("খসড়া বদলেছে—আগে আবার যাচাই করো");
-            InputKeys.CheckModifiers();Verify();if(cancelled())throw new OperationCanceledException();InputKeys.Enter();
+            InputKeys.CheckModifiers();Verify();if(cancelled())throw new OperationCanceledException();
+            try{InputKeys.Enter();if(!WaitForText("",2500))throw new DraftSendUncertainException();}
+            catch(DraftSendUncertainException){throw;}
+            catch{throw new DraftSendUncertainException();}
         }
         [DllImport("user32.dll",CharSet=CharSet.Unicode)]static extern int GetWindowText(IntPtr h,StringBuilder text,int length);
     }
@@ -287,6 +328,7 @@ namespace Alfred {
         public static void SelectAll(){Send(new[]{K(0x11,0,0),K(0x41,0,0),K(0x41,0,2),K(0x11,0,2)});}
         public static void Backspace(){Send(new[]{K(8,0,0),K(8,0,2)});}
         public static void Enter(){Send(new[]{K(13,0,0),K(13,0,2)});}
+        public static void End(){Send(new[]{K(0x11,0,0),K(0x23,0,0),K(0x23,0,2),K(0x11,0,2)});}
         public static void Type(string text){List<Input> list=new List<Input>(text.Length*2);foreach(char c in text){if(c=='\r')continue;if(c=='\n'){list.Add(K(0x10,0,0));list.Add(K(13,0,0));list.Add(K(13,0,2));list.Add(K(0x10,0,2));}else{list.Add(K(0,c,4));list.Add(K(0,c,6));}}Send(list.ToArray());}
         public static string AbiCheck(){if(IntPtr.Size==8&&Marshal.SizeOf(typeof(Input))!=40)throw new Exception("Windows keyboard input ABI size is invalid");return "PASS Windows x64 keyboard input ABI"+Environment.NewLine;}
     }

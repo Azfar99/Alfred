@@ -1,0 +1,7 @@
+﻿Sample	Backend	WallMs	PeakWorkingMiB	PeakPrivateMiB	Text
+calculator-request-sample.wav	Old Bengali Q5 CPU	4193	360.4	851.3	Can you open the calculator for me?
+calculator-request-sample.wav	Whisper large-v3-turbo Q5 / CUDA	1141	440.9	1806.7	Can you open the calculator for me?
+bengali-sample.wav	Old Bengali Q5 CPU	4751	360.4	851.3	আমার সোনার বানা আমি তনাতে ভালো ভাস্টি।
+bengali-sample.wav	Whisper large-v3-turbo Q5 / CUDA	1296	440.8	1811.5	हमार शोलार बानला हमी तोनाते भालो परस्थी।
+english-dictation-sample.wav	Old Bengali Q5 CPU	4273	360.9	851.8	Please write this message to my friend. "I will call you after work, and then we can talk about the meeting!"
+english-dictation-sample.wav	Whisper large-v3-turbo Q5 / CUDA	1339	449.5	1870.0	Please write this message to my friend. I will call you after work, and then we can talk about the meeting.

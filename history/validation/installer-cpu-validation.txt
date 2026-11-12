@@ -1,0 +1,2 @@
+PASS installed CPU transcription + Calculator parsing: Can you open the calculator for me?
+Backend: Whisper multilingual small Q5 / CPU; elapsedMs=3373

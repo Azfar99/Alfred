@@ -1,0 +1,8 @@
+{
+  "ExitCode": 0,
+  "Transcript": "আমার শোনার বানা আমি তনাতে ভালোপাস্টি।\r\n",
+  "PeakWorkingSetMB": 367.9,
+  "PeakPrivateMB": 851.2,
+  "AudioFile": "F:\\Alfred\\build\\bengali-sample.wav",
+  "Model": "F:\\Alfred\\models\\ggml-bengali-q5_1.bin"
+}

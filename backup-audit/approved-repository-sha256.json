@@ -1,0 +1,807 @@
+[
+  {
+    "path": ".gitattributes",
+    "bytes": 273,
+    "sha256": "7007e643fb82e39378fb6837e1b4452f2e4406dd5fe4196b6feb9e12445f972b"
+  },
+  {
+    "path": ".gitignore",
+    "bytes": 553,
+    "sha256": "2640c997fe59e4f0f788331c27f8314fed74541e444cefe795009df013b2b899"
+  },
+  {
+    "path": "Alfred.exe",
+    "bytes": 165888,
+    "sha256": "7fbdb43e33dea9652f4c461cff838ab8af5d67d46711741ab6836d4cf784813e"
+  },
+  {
+    "path": "COMMANDS-BN.txt",
+    "bytes": 16313,
+    "sha256": "0be0d7e16abe920cb0a301dd05bc15c57c7d1d755f5ad61ed1d8069d2f507e71"
+  },
+  {
+    "path": "PROGRESS.md",
+    "bytes": 23912,
+    "sha256": "67e97de7d620cc784c2bbd6c144228f1541457423d5c68167a4c5905db48188e"
+  },
+  {
+    "path": "README.md",
+    "bytes": 3088,
+    "sha256": "ad5c325cc3d4ca3afab0824b09a93b431e351aa431976dd9d9a09e48a7190f26"
+  },
+  {
+    "path": "Start-Alfred.vbs",
+    "bytes": 348,
+    "sha256": "db3d01f20b1cc1f73737a4e78f3d863a51447a0e7e128cc2744da57e283ffbd6"
+  },
+  {
+    "path": "TECHNOLOGY.md",
+    "bytes": 1213,
+    "sha256": "12f60bb59fb9e63798ae899b71f7baa369f51e07d381d1657ac6e819f86bea8f"
+  },
+  {
+    "path": "backup-audit/consolidation-summary.json",
+    "bytes": 227,
+    "sha256": "c09a92ba4103663c8187d3d4549a012812d1ce1d86ce086d0b8a2c04c78fe78d"
+  },
+  {
+    "path": "backup-audit/relationship-matches.txt",
+    "bytes": 1216,
+    "sha256": "203700f848c547d5910f288fc0e6c382a488a3a6c7ddfe6cad884804f11fcb84"
+  },
+  {
+    "path": "backup-audit/relocation.json",
+    "bytes": 265,
+    "sha256": "6af9e6d61452e9826aa8a27e4605a4dddbbc46a0179ef9def18a8a4d811f4257"
+  },
+  {
+    "path": "build.ps1",
+    "bytes": 2396,
+    "sha256": "766c5eb68c447e3a875266efcf085c11624954a4f698bae5a4cbf6ae0bd29c57"
+  },
+  {
+    "path": "data/notes/notes.txt",
+    "bytes": 3,
+    "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+  },
+  {
+    "path": "data/position.ini",
+    "bytes": 11,
+    "sha256": "828e30cd0be86b2864835263baae52874bd3e73aba8804afc7c69388583069c4"
+  },
+  {
+    "path": "data/status.json",
+    "bytes": 46,
+    "sha256": "a773a616e6a1206d964a978e387ec30f6c6abb2e4662b8a350468b531e3d9730"
+  },
+  {
+    "path": "engine/Release/SDL2.dll",
+    "bytes": 2500096,
+    "sha256": "de23db1694a3c7a4a735e7ecd3d214b2023cc2267922c6c35d30c7fc7370d677"
+  },
+  {
+    "path": "engine/Release/bench.exe",
+    "bytes": 27648,
+    "sha256": "0998ddcc20eabdb410b7c736f71b5908e6a0619360075976d886e621f6112ee6"
+  },
+  {
+    "path": "engine/Release/command.exe",
+    "bytes": 27648,
+    "sha256": "069cb77343a6056472a2f38cfe0530d534ee252310336062c630d6f150ec263a"
+  },
+  {
+    "path": "engine/Release/ggml-base.dll",
+    "bytes": 693248,
+    "sha256": "bede0d6b2d387236ecd2b5dd676d51c8984b5b6e0ae461a12174e9c01345c5f0"
+  },
+  {
+    "path": "engine/Release/ggml-cpu-alderlake.dll",
+    "bytes": 1009664,
+    "sha256": "d8f5c56ea490394eeae8b271650f2647aecd039a542d6df9e0140726e62a4603"
+  },
+  {
+    "path": "engine/Release/ggml-cpu-cannonlake.dll",
+    "bytes": 1049600,
+    "sha256": "74127b40abd4f595d9db6af0fa313a02e18ff42fc228bfa05281e7c788dd4507"
+  },
+  {
+    "path": "engine/Release/ggml-cpu-cascadelake.dll",
+    "bytes": 1061376,
+    "sha256": "4b11c427b844eeac87529af9a8d94b35aad2024666beb2a35e59fe3077e4b81e"
+  },
+  {
+    "path": "engine/Release/ggml-cpu-haswell.dll",
+    "bytes": 1010688,
+    "sha256": "1306b1014c8118d27234d8ddc0e66ced1f8c8476bf85071595fd182ea9b7263b"
+  },
+  {
+    "path": "engine/Release/ggml-cpu-icelake.dll",
+    "bytes": 1061376,
+    "sha256": "2b4dc4c66e7d8fe2807283816e9cf3b7f7d0556f59df34069871e37eab8aed40"
+  },
+  {
+    "path": "engine/Release/ggml-cpu-sandybridge.dll",
+    "bytes": 1026560,
+    "sha256": "04edbdebc01a1d421062a960881a4f34d520d99693999518243f332406444c6e"
+  },
+  {
+    "path": "engine/Release/ggml-cpu-skylakex.dll",
+    "bytes": 1049600,
+    "sha256": "1774714cf93621406ff35344b54715619a83242ae3e331e44d98a3b35ce801be"
+  },
+  {
+    "path": "engine/Release/ggml-cpu-sse42.dll",
+    "bytes": 862720,
+    "sha256": "f060318772c4c2dbac312bbfff6ea700b85dbc502bb38585a7186d06d549301a"
+  },
+  {
+    "path": "engine/Release/ggml-cpu-x64.dll",
+    "bytes": 866816,
+    "sha256": "4b4b05caba40d4309b5d710ef74c59ba190516b8489f27bdb1ba11ae33c6e9d3"
+  },
+  {
+    "path": "engine/Release/ggml.dll",
+    "bytes": 62464,
+    "sha256": "31fe18616d872af9b6134b47a6dff8072ae4ecbe5df0273f4f8dc36766c9db8e"
+  },
+  {
+    "path": "engine/Release/llama.dll",
+    "bytes": 2755072,
+    "sha256": "74b7857b05951c0dff4c7baf796205433c84ee40c9bbb0bda3f182d4425ce339"
+  },
+  {
+    "path": "engine/Release/main.exe",
+    "bytes": 27648,
+    "sha256": "ebf6211d1dbcbcf71a1222bcf1846b638540a32630e1d691b4114a272ba4c5db"
+  },
+  {
+    "path": "engine/Release/parakeet-cli.exe",
+    "bytes": 372224,
+    "sha256": "f7bdb50afd1c31a959eadf816a04878f8248c63973c027a64053346865091300"
+  },
+  {
+    "path": "engine/Release/parakeet-quantize.exe",
+    "bytes": 102912,
+    "sha256": "b2296d8f44a7bffc1068c806d741aa3e59def2de1a86d3f8d7c2ce4fc8750377"
+  },
+  {
+    "path": "engine/Release/parakeet.dll",
+    "bytes": 582144,
+    "sha256": "abe7399d64a67b1ebcb8d33becd07c67cbf186cb0d2bab34a4264feefdc337c4"
+  },
+  {
+    "path": "engine/Release/stream.exe",
+    "bytes": 27648,
+    "sha256": "280f9f0f6015df40380fbde07f1b32614547a9122e61f7f49bb090ea72474f76"
+  },
+  {
+    "path": "engine/Release/test-common-utf8.exe",
+    "bytes": 324608,
+    "sha256": "f9b60cfec215988fe2af8b2967610d08f828f086ecf73a2932140f7a4c4f18f5"
+  },
+  {
+    "path": "engine/Release/test-parakeet-full-diffusion.exe",
+    "bytes": 369664,
+    "sha256": "8c4a36989dbf1a0313761aa13fa6a43ac1ce316425a18f9c4361c422891092c6"
+  },
+  {
+    "path": "engine/Release/test-parakeet-full-gb1.exe",
+    "bytes": 366080,
+    "sha256": "0d96b6e2738e8437be2d209cf3b6b5fe9be9ddf1f70e627d587a0a54dcf97aa3"
+  },
+  {
+    "path": "engine/Release/test-parakeet-full-jfk.exe",
+    "bytes": 366080,
+    "sha256": "bd5bad69933675a8e92a6f4a1ab9290ae25526ec9b6907a04ebb3f4801d963a8"
+  },
+  {
+    "path": "engine/Release/test-parakeet.exe",
+    "bytes": 354816,
+    "sha256": "633c1d7cbdbd75a06ea80e25b84d4fbe9e648a9f2e1e91cab5c26d99ce1e9a42"
+  },
+  {
+    "path": "engine/Release/test-vad-full.exe",
+    "bytes": 355840,
+    "sha256": "f617a0f8cefe100a5db66ef0a81c517b211d454a2780bedd7b6dbfbd1a15eaea"
+  },
+  {
+    "path": "engine/Release/test-vad.exe",
+    "bytes": 354304,
+    "sha256": "1c8a5c758f21f5682d4fd1f67b1871ffbcc5b6adf784eb5507297073f40f3b7f"
+  },
+  {
+    "path": "engine/Release/test-whisper-buffer-loader.exe",
+    "bytes": 11264,
+    "sha256": "53d2af0db387f7270fe4d969a41684313063ec91f422c4ff27963896cea9fdb5"
+  },
+  {
+    "path": "engine/Release/test-whisper-lang-detect-abort.exe",
+    "bytes": 13312,
+    "sha256": "b306e8966a0783eb02a56f2a1cc6e602629930365a94b52e315ea379df744c8d"
+  },
+  {
+    "path": "engine/Release/test-whisper-zero-samples.exe",
+    "bytes": 11776,
+    "sha256": "00a7b343074d6c45cf5b69e598b6a62a0d7c44e4b54968074086b0c8846f6cb4"
+  },
+  {
+    "path": "engine/Release/wchess.exe",
+    "bytes": 178688,
+    "sha256": "01b112d6ac968fa13d3df6500bd24e771f1bee29df15989d6cb72efaf946f630"
+  },
+  {
+    "path": "engine/Release/whisper-bench.exe",
+    "bytes": 20480,
+    "sha256": "d1425cdd3d130af16f6bb57e56dfb7ca42071d7e7bd9373ad2190ff7b0fcda92"
+  },
+  {
+    "path": "engine/Release/whisper-cli.exe",
+    "bytes": 479744,
+    "sha256": "331dba46d6427105d2b802cdbc7eae916ea1c5abf9b0d3b5cfe460d8db8e4366"
+  },
+  {
+    "path": "engine/Release/whisper-command.exe",
+    "bytes": 176640,
+    "sha256": "b8ac7c869ab036843054ec280cc3e78f37e6c35234ee6e6cc8b5e63af8498709"
+  },
+  {
+    "path": "engine/Release/whisper-lsp.exe",
+    "bytes": 180736,
+    "sha256": "2b31873e8937ad0b9a3be5455bf7ca84cf515fae13edfa3614d8867f3c06dac2"
+  },
+  {
+    "path": "engine/Release/whisper-quantize.exe",
+    "bytes": 111616,
+    "sha256": "04cacf442510a5c540946a8629306c52631d9b46b44c9c78f2a076e39cfff3fc"
+  },
+  {
+    "path": "engine/Release/whisper-server.exe",
+    "bytes": 726016,
+    "sha256": "a97456e747f28e7bb09c1dac35f40d94404c5ecffa74aaaaa7a3753ea6543121"
+  },
+  {
+    "path": "engine/Release/whisper-stream.exe",
+    "bytes": 378368,
+    "sha256": "f1099fca8a6762702467c4df52f999d8788922918515cef91e01284d444876c7"
+  },
+  {
+    "path": "engine/Release/whisper-talk-llama.exe",
+    "bytes": 457728,
+    "sha256": "99fb5d291cfa385eea005fb4f313e5ee496f2c40d546079bac797e7523bc0117"
+  },
+  {
+    "path": "engine/Release/whisper-vad-speech-segments.exe",
+    "bytes": 362496,
+    "sha256": "012d801ff1b69b1c8bbd55659561b0e43258bc8dffae19cb6f236e5ccc52d089"
+  },
+  {
+    "path": "engine/Release/whisper.dll",
+    "bytes": 1370112,
+    "sha256": "034396d75bb5720c1851674ff64a96192b58f6927b68d334ebd254ce6cad9674"
+  },
+  {
+    "path": "engine/sherpa/onnxruntime.dll",
+    "bytes": 17799168,
+    "sha256": "7f66f939a881baf4f46a2216496798edf4a1429878b646d12674aa62f27d8a25"
+  },
+  {
+    "path": "engine/sherpa/sherpa-onnx-c-api.dll",
+    "bytes": 4605952,
+    "sha256": "2729a0da3fbd20fb4e14e157f7cc0e00af848b55f04121319d445c138aeba214"
+  },
+  {
+    "path": "history/snapshots/backup-2026-11-12/Alfred.exe",
+    "bytes": 46080,
+    "sha256": "7ed9fd9811465a129d5aab887ba2e172de9bb776510e9461052a40ed85dfd9f8"
+  },
+  {
+    "path": "history/snapshots/backup-2026-11-12/Commands.cs",
+    "bytes": 8727,
+    "sha256": "63acc4ae4cbbb3026ad7eed46830cbb889f7d0819917f5dc83239243759603d6"
+  },
+  {
+    "path": "history/snapshots/backup-2026-11-12/Program.cs",
+    "bytes": 28905,
+    "sha256": "3dd937e11d68aedf3a978360c7656578d8706cd71e291c6728bcd5acd27d9d0c"
+  },
+  {
+    "path": "history/snapshots/backup-2026-11-12/position.ini",
+    "bytes": 11,
+    "sha256": "e657188bee58cbc94382e28477344f51c0c1f8a23b21d1304d7e0e4d195c860f"
+  },
+  {
+    "path": "history/snapshots/before-helper-features/Alfred.exe",
+    "bytes": 48128,
+    "sha256": "8aec7f0b87a0bcf0b4539350e53060f785269ac33d387c7b30f60cf7bcffb048"
+  },
+  {
+    "path": "history/snapshots/before-helper-features/Commands.cs",
+    "bytes": 9195,
+    "sha256": "5786592a109724147436f383544b6ef4ab5f26648dc097545772f4cc601bf37d"
+  },
+  {
+    "path": "history/snapshots/before-helper-features/Program.cs",
+    "bytes": 30805,
+    "sha256": "f69a64eca4573a59630cd5d02e99de9eaa58df32ec954e4135e914c466bff787"
+  },
+  {
+    "path": "history/snapshots/before-voice-writing/Alfred.exe",
+    "bytes": 69120,
+    "sha256": "341ca32dda3369a0db8c1cc1f141f10cc7b7b4a2cd8144d347ccc8bab1be9397"
+  },
+  {
+    "path": "history/snapshots/before-voice-writing/Commands.cs",
+    "bytes": 18733,
+    "sha256": "b46c5237e4b9db7e6e3dab8ad526e159d23538893023695f083ae85255fe8e60"
+  },
+  {
+    "path": "history/snapshots/before-voice-writing/Program.cs",
+    "bytes": 39869,
+    "sha256": "a2062e0ae0e236a48b1424b09033d39e7ef4793691eae94c96fc78af29efc815"
+  },
+  {
+    "path": "history/snapshots/before-voice-writing/build.ps1",
+    "bytes": 1288,
+    "sha256": "3448946b489f4a1011cc14c6c539c1e394d1a94fbc29fc6623c872d7fb170fa3"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/Alfred.exe",
+    "bytes": 131584,
+    "sha256": "5c8903d664606380f31a71e185c5d4398506377729b50f4905055c0b82e88bb4"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/COMMANDS-BN.txt",
+    "bytes": 15669,
+    "sha256": "6f766263e3196adb06cb3fe0ce0b2e0a3c00374c07ab2388ade2b7da9f53bd07"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/PROGRESS.md",
+    "bytes": 18648,
+    "sha256": "7513bb66984e7cae3a2ff173cf2063e4b2eb408bd64ffa8c0d5bea747af1cfdf"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/build.ps1",
+    "bytes": 1980,
+    "sha256": "f2dbc38367098912ea82d92b558982c624d0c9b229199f048fdc478fc92667f8"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/source/Audio.cs",
+    "bytes": 7237,
+    "sha256": "9e34f9361a8f6cb35f54bc84ddb83a2ab4827c0665b361db0f194498bd8da820"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/source/Commands.cs",
+    "bytes": 19772,
+    "sha256": "40fcab335f3bfe7fac1dfb6203a7e838f195d979d0f04844df6252b13abbe449"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/source/Drafting.cs",
+    "bytes": 27690,
+    "sha256": "43416437f1ce9dfe30dac8f56c594787fc7a7469e522a5eee21f3bb609676218"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/source/Helpers.cs",
+    "bytes": 6553,
+    "sha256": "86ef03b6a0d3cdaa0a40e73b04cb6350e3cf80a9490dea979415e15ef8614f29"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/source/Program.cs",
+    "bytes": 62663,
+    "sha256": "d983490e3f0f41cddc12fc168bfe94a1a7197a2667a69c8910c3bf27c7ce7cd1"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/source/ScreenGrab.cs",
+    "bytes": 7209,
+    "sha256": "9d76e9de546d88efd371edca6041022ffa64e76ef2f70a2553e52547cf606f1f"
+  },
+  {
+    "path": "history/snapshots/upgrade-v2-backup/source/VoiceActions.cs",
+    "bytes": 22041,
+    "sha256": "5a22f0a7e492f1df8d9409918cac796999d718e921cfd1ccbf2e17e9f8ed0940"
+  },
+  {
+    "path": "history/validation/AlfredDraftTarget.cs",
+    "bytes": 712,
+    "sha256": "668fed04db86d0c9974045b41ef650ade8f55950cd1566fdde5259c5e365edeb"
+  },
+  {
+    "path": "history/validation/AlfredDraftUiProbe.cs",
+    "bytes": 4153,
+    "sha256": "602ac6fead504b951a7f66b62bc32d236ec6e9e7e1d9d26727d8535292000646"
+  },
+  {
+    "path": "history/validation/AlfredHelperProbe.cs",
+    "bytes": 2713,
+    "sha256": "0e539e95a0084d2fe78c85a5c89e840437c86286ada87ea1fad09a93b8428a27"
+  },
+  {
+    "path": "history/validation/FinalCpuCheck.cs",
+    "bytes": 1277,
+    "sha256": "8efdd8830ce7281c58fdc0a019c1477dcd2460cf23939060b453c5f97dc242cf"
+  },
+  {
+    "path": "history/validation/InstalledCpuCheck.cs",
+    "bytes": 1271,
+    "sha256": "f92c01cfac2cdd1c6d5935db0ee28ddb4e48c99a0555528711b40a424ad0016d"
+  },
+  {
+    "path": "history/validation/MakeIcon.cs",
+    "bytes": 590,
+    "sha256": "6201e93637d123aa977cd79a4d90f4fc0cd9d894fc4ca1022bf86c721027f0d0"
+  },
+  {
+    "path": "history/validation/Program-before-large-blue.cs",
+    "bytes": 29988,
+    "sha256": "d9628b49a7088f07b9b3c2f2bfdade712d379813805722eddd0a5941ec548926"
+  },
+  {
+    "path": "history/validation/RestoreNoteTimerTest.ps1",
+    "bytes": 2328,
+    "sha256": "34f143df656f0de1c2936ca40ae5e57ed583a67b27702b8f26383e5b45addbd4"
+  },
+  {
+    "path": "history/validation/SpeechProbe.cs",
+    "bytes": 1920,
+    "sha256": "a102897efdec3bf0670007b1ed4fb6517569af1ec50246cbb0a749224a2286f6"
+  },
+  {
+    "path": "history/validation/VisualPreview.cs",
+    "bytes": 1638,
+    "sha256": "d92c121bd4c26d59bd7bfeec0bc3568bc1400714eb75fa9d911bd00c8160947d"
+  },
+  {
+    "path": "history/validation/WakePhraseProbe.cs",
+    "bytes": 4352,
+    "sha256": "fef17ce0e491b2dd48cd656938fcbcaf381123db3895966c724b7c0742bb14f5"
+  },
+  {
+    "path": "history/validation/app-shortcut-check.json",
+    "bytes": 827,
+    "sha256": "b19c3a6d03fe168cd3d17fc633837269228801b140abde0b48b1d28346cddb3b"
+  },
+  {
+    "path": "history/validation/installer-cpu-validation.txt",
+    "bytes": 154,
+    "sha256": "a49432ca47d5135c7a130a3a6163e8bc632c39f38427c8e485354c70259b2cf0"
+  },
+  {
+    "path": "history/validation/installer-final-validation.txt",
+    "bytes": 235,
+    "sha256": "8702b18be4c450f005d20b73c74656e1129e6e7390930f8c0193c6d9a8b88c7b"
+  },
+  {
+    "path": "history/validation/installer-validation.txt",
+    "bytes": 435,
+    "sha256": "2fbc9794074c0897a9de1e36b03729694f102d04fb234303d8bd072e4b84f508"
+  },
+  {
+    "path": "history/validation/lean-resource-check.json",
+    "bytes": 184,
+    "sha256": "7992c2cc948d329c4e2d8d7f6a18122e100e8ab16741c1637a5cc15cb65d6b27"
+  },
+  {
+    "path": "history/validation/live-bengali-check.json",
+    "bytes": 320,
+    "sha256": "1bde986c8bb6f460a883dcaaed1f3e9ad16f1fc4dac5acc3cd6687abdc4607e5"
+  },
+  {
+    "path": "history/validation/live-mic-privacy-check.json",
+    "bytes": 420,
+    "sha256": "7bbd144f5c9560a429aa735a4391fff961d316e8f3c92a0f41d15f1a32d4b175"
+  },
+  {
+    "path": "history/validation/live-note-timer-check.json",
+    "bytes": 129,
+    "sha256": "a7d82c8804d1b0fca345bf0936f868dd2751be742e61f9f2669f1950c730f790"
+  },
+  {
+    "path": "history/validation/live-screenshot-check.json",
+    "bytes": 163,
+    "sha256": "0ea60e045bedeff68a0f10cb1352d610e3745a75bcd5e366a4cfa9aa4a19c418"
+  },
+  {
+    "path": "history/validation/live-wake-check.json",
+    "bytes": 495,
+    "sha256": "8fc425a5e2adb58666d584dc272b59b0fd4a9d451712f63afa8a2641195b68e7"
+  },
+  {
+    "path": "history/validation/microphone-privacy-check.txt",
+    "bytes": 94,
+    "sha256": "a1ccf462bad446f98bd8ac4ef5e0f197a3a0f3973f3c665bcc3c530b89fe61b2"
+  },
+  {
+    "path": "history/validation/native-check.txt",
+    "bytes": 101,
+    "sha256": "07c24046eea9379e7c22311fddda6467fb71e521ac89e72ca0f827b12aa26c3f"
+  },
+  {
+    "path": "history/validation/orb-idle-a.png",
+    "bytes": 17991,
+    "sha256": "21c3fabaf70968901799d9388cec7353220cf94c768cb7b538122e8cc8574be0"
+  },
+  {
+    "path": "history/validation/orb-idle-b.png",
+    "bytes": 18095,
+    "sha256": "bd11d0d61a002adfa5c14d476f777b730d1980c9185f2e1458d64cca6379cab2"
+  },
+  {
+    "path": "history/validation/orb-visual-preview.png",
+    "bytes": 91690,
+    "sha256": "9b8dfcd543828def8a072df6a508d5cba8a7a3138ebf2170477a8080157f1813"
+  },
+  {
+    "path": "history/validation/resource-check.json",
+    "bytes": 163,
+    "sha256": "9427a6dc6c07a989b1abdf232fe0ddbf934a9ff50c065daa0a3eb50d1694709d"
+  },
+  {
+    "path": "history/validation/short-resource-check.json",
+    "bytes": 188,
+    "sha256": "e90b9b4b9628c8c42cb0e78eda22fba0a62449adda1f42f0ea7ef45d21f56bea"
+  },
+  {
+    "path": "history/validation/speech-benchmark.cs",
+    "bytes": 3952,
+    "sha256": "dbfc49d64b6cd3e01c4f24a221374f3b51fbec1da10adda299e4c2ea4ac389a7"
+  },
+  {
+    "path": "history/validation/speech-cancel-check.cs",
+    "bytes": 1765,
+    "sha256": "a91599f48e4f654c66d266a96d7245c9bcdac4a61acb9b460a533dc263731ba9"
+  },
+  {
+    "path": "history/validation/speech-cancel-check.txt",
+    "bytes": 265,
+    "sha256": "230a63df8b0363bd21cb37ebd8405f5bf34c5a973a16107a0d4012def395cea9"
+  },
+  {
+    "path": "history/validation/speech-input-validation.txt",
+    "bytes": 2499,
+    "sha256": "b6c58c284fc4a138316a5b8dc00c0ab64d1b443fe9d9c7965fe659f425351899"
+  },
+  {
+    "path": "history/validation/speech-script-retry-check.cs",
+    "bytes": 2221,
+    "sha256": "55513fa8ab5376a5ab43bfee6411779e887ce809962a31ad7b4e8aef0b54ca5d"
+  },
+  {
+    "path": "history/validation/speech-upgrade-benchmark.tsv",
+    "bytes": 986,
+    "sha256": "9fb4202088cdcaafd0393bb3c0d71850b6921a143171fd215623147cc8e09b53"
+  },
+  {
+    "path": "history/validation/tests.txt",
+    "bytes": 2927,
+    "sha256": "90e5851f5d4a593a5d92fd8da55617d82795ae32edd380e93f0c351c08a0dbc6"
+  },
+  {
+    "path": "history/validation/wake-phrase-check.json",
+    "bytes": 374,
+    "sha256": "b68dc55c3c4a5ed4c9dc6969110546a98bdd80396642a58470c57dfe230ae875"
+  },
+  {
+    "path": "history/validation/wake-phrase-optimization.txt",
+    "bytes": 1223,
+    "sha256": "b57acd5c2c128762dd322ad42ea3ff3b0e02a7c01ca2594b68ab7baada7c4c38"
+  },
+  {
+    "path": "installer/Alfred.ico",
+    "bytes": 2686,
+    "sha256": "d1cda402fd49b1558c1456e8cecaa6eade4e356f701a25ea9b9ac5db69848f83"
+  },
+  {
+    "path": "installer/Alfred.iss",
+    "bytes": 4079,
+    "sha256": "88400ce0c549c29de312289a382d52feadf91e53a3cb94bfcdff22e8c1c2cedd"
+  },
+  {
+    "path": "installer/INSTALL-README.txt",
+    "bytes": 1654,
+    "sha256": "004ec229e90eace50afc96396112003a24cb80801e8902bbffc5b7eb6aece5cc"
+  },
+  {
+    "path": "installer/README.md",
+    "bytes": 2039,
+    "sha256": "24aef3203275d362e4e0ceb2f9a47ab3d75f34dc7daf4a8d29f8dc9f76c24f64"
+  },
+  {
+    "path": "installer/THIRD-PARTY-NOTICES.txt",
+    "bytes": 1263,
+    "sha256": "6eca05f6608cecfa58cfdba90b7a0725e334338d74fff55af53e199262b4bad9"
+  },
+  {
+    "path": "installer/package.ps1",
+    "bytes": 5769,
+    "sha256": "0c9cbc798c561c077e451d5dc164ad488635f3a808d92456e72f8b718d68b35e"
+  },
+  {
+    "path": "models/ggml-base-q5_1.bin",
+    "bytes": 59707625,
+    "sha256": "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898"
+  },
+  {
+    "path": "models/ggml-bengali-q5_1.bin",
+    "bytes": 190085487,
+    "sha256": "a5a806b5832c18d0763d897ba01b1c3679910876417b4f7f2e3818d8eed85bde"
+  },
+  {
+    "path": "models/ggml-small-q5_1.bin",
+    "bytes": 190085487,
+    "sha256": "ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb"
+  },
+  {
+    "path": "models/ggml-tiny-q5_1.bin",
+    "bytes": 32152673,
+    "sha256": "818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7"
+  },
+  {
+    "path": "models/silero_vad.onnx",
+    "bytes": 643854,
+    "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+  },
+  {
+    "path": "models/wake/README.md",
+    "bytes": 726,
+    "sha256": "74e42d37d63acd2366b042151d576fcc0c4917a41de339414a37f1e79f4e80e2"
+  },
+  {
+    "path": "models/wake/bpe.model",
+    "bytes": 244837,
+    "sha256": "c8a2a0129c4ab8e463164c142f82d25649661b122c8cd0b7aab5c9e80b90ad24"
+  },
+  {
+    "path": "models/wake/decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+    "bytes": 277985,
+    "sha256": "e40ff43297abe815e8898494c17e71bba2152d9d40fa3eb803f75d0f7533329a"
+  },
+  {
+    "path": "models/wake/encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+    "bytes": 4807159,
+    "sha256": "1e721676515bcd42a186979733981213c66c80db680e1cc582dfedf3be76e678"
+  },
+  {
+    "path": "models/wake/joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx",
+    "bytes": 163380,
+    "sha256": "eae9da0c7e1e6c6a3f4cc42d167899c388f6c6701b94cb96320e4f55df79624c"
+  },
+  {
+    "path": "models/wake/keywords.txt",
+    "bytes": 184,
+    "sha256": "c5acbcf7f0c970a3a732d72bea59e567a4ecac8f7c07c46a635e2d1dba905dd4"
+  },
+  {
+    "path": "models/wake/tokens.txt",
+    "bytes": 5006,
+    "sha256": "fd2ded4050a55d2b1578870ba8697d02371980217806b7558bd0a5cc60f3ba53"
+  },
+  {
+    "path": "recovery/restore-optional-gpu.ps1",
+    "bytes": 1214,
+    "sha256": "7263b1c2bb52739299ee677d9a643125a0fb6eff486f12d3cfdeefee2bac6d28"
+  },
+  {
+    "path": "recovery/upstream-gpu-dependencies.json",
+    "bytes": 580,
+    "sha256": "da376a401c21667df7c0ba91b550c66ec974f146100ded6151cda234e9858ad6"
+  },
+  {
+    "path": "releases/Alfred-2.0.1-Windows-x64-Setup.exe",
+    "bytes": 218817920,
+    "sha256": "a0c6340af971346bfaba264ebaa44b2dc3d8ba994295acefd5ac5534ed6ea583"
+  },
+  {
+    "path": "releases/Alfred-2.0.1-Windows-x64-Setup.exe.sha256",
+    "bytes": 102,
+    "sha256": "5cbc1eb3382259e02efe590683bee477a82e84cee849026a518bb8bec56885a5"
+  },
+  {
+    "path": "releases/Alfred-2.0.1-Windows-x64-manifest.json",
+    "bytes": 5930,
+    "sha256": "65047771a0bec208c4311cbe58d00abb723f6dad8ec00f1a480ac5581e40ed04"
+  },
+  {
+    "path": "releases/RELEASE-NOTES.md",
+    "bytes": 820,
+    "sha256": "2010a06a4527cd8ad6129f55cfebd5daf005c094337c2b6a2ac20178284f724d"
+  },
+  {
+    "path": "releases/VALIDATION.txt",
+    "bytes": 235,
+    "sha256": "8702b18be4c450f005d20b73c74656e1129e6e7390930f8c0193c6d9a8b88c7b"
+  },
+  {
+    "path": "releases/latest-build.json",
+    "bytes": 299,
+    "sha256": "b032e01daa63069307742e3f708d995173f96b27b238cb56ccafd17d88897e75"
+  },
+  {
+    "path": "source/AssemblyInfo.cs",
+    "bytes": 233,
+    "sha256": "4e5012001098d4478d9c48ee77cee43318b0dec9287f26399bddfea086a673f1"
+  },
+  {
+    "path": "source/Audio.cs",
+    "bytes": 7237,
+    "sha256": "9e34f9361a8f6cb35f54bc84ddb83a2ab4827c0665b361db0f194498bd8da820"
+  },
+  {
+    "path": "source/Commands.cs",
+    "bytes": 19809,
+    "sha256": "948a4aa21c2bbbf1f7d2c556a9db6684f049e50ab6fb50e23ec8ce12b137fd7e"
+  },
+  {
+    "path": "source/Drafting.cs",
+    "bytes": 32302,
+    "sha256": "7078363ee0588c1b736a71de41f0699349da51f74adfeb0166ea7913eb7cba81"
+  },
+  {
+    "path": "source/Helpers.cs",
+    "bytes": 6553,
+    "sha256": "86ef03b6a0d3cdaa0a40e73b04cb6350e3cf80a9490dea979415e15ef8614f29"
+  },
+  {
+    "path": "source/OrbVisual.cs",
+    "bytes": 4188,
+    "sha256": "8fd77eb04d7ac068cc2ae5502743b81f1a86fd5479b83b986155c53aff9d7bee"
+  },
+  {
+    "path": "source/Program.cs",
+    "bytes": 55171,
+    "sha256": "e193eb302695add29918a8d85717111a19dac36fc7c4a26fe4a9550e63d6d094"
+  },
+  {
+    "path": "source/ScreenGrab.cs",
+    "bytes": 7209,
+    "sha256": "9d76e9de546d88efd371edca6041022ffa64e76ef2f70a2553e52547cf606f1f"
+  },
+  {
+    "path": "source/SpeechInput.cs",
+    "bytes": 31226,
+    "sha256": "1d1a8e0bd642810c9beba38d4941849ec78be4963b4a65afd35f74921f9bdd96"
+  },
+  {
+    "path": "source/SpeechTranscriber.cs",
+    "bytes": 12407,
+    "sha256": "e8b2b4dc5d2062caa6d75adc4f3c711a5d50bd8abfe9ab087c981090925c0984"
+  },
+  {
+    "path": "source/VoiceActions.cs",
+    "bytes": 23187,
+    "sha256": "8d50c0bea7d616cd6d3a7d5b8e9179c6b5001056c86dd650628a1242e7439515"
+  },
+  {
+    "path": "third-party/licenses/Whisper-models-MIT.txt",
+    "bytes": 1063,
+    "sha256": "b5d65a59060e68c4ff940e1eddfa6f94b2d68fdf58ed7f4dd57721c997e35e9d"
+  },
+  {
+    "path": "third-party/licenses/ggml-MIT.txt",
+    "bytes": 1078,
+    "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+  },
+  {
+    "path": "third-party/licenses/miniaudio-license.txt",
+    "bytes": 2597,
+    "sha256": "457f1b500e0adf6bc059edddfa78a2f62012e7c3bb43476c20e0bd23b25ba0eb"
+  },
+  {
+    "path": "third-party/licenses/onnxruntime-MIT.txt",
+    "bytes": 1073,
+    "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+  },
+  {
+    "path": "third-party/licenses/sherpa-onnx-Apache-2.0.txt",
+    "bytes": 11358,
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  {
+    "path": "third-party/licenses/silero-vad-MIT.txt",
+    "bytes": 1075,
+    "sha256": "2e63e9a38b6e8fc0c7bc37ce174caca1862870856c6daf5697cfb785e925520b"
+  },
+  {
+    "path": "third-party/licenses/whisper-MIT.txt",
+    "bytes": 1078,
+    "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+  }
+]

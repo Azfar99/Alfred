@@ -1,0 +1,26 @@
+[
+  {
+    "File": "wake-Alfred.wav",
+    "Recognized": "(none)",
+    "Confidence": 0,
+    "Accepted": false,
+    "Expected": false,
+    "Pass": true
+  },
+  {
+    "File": "wake-hello-Alfred.wav",
+    "Recognized": "(none)",
+    "Confidence": 0,
+    "Accepted": false,
+    "Expected": true,
+    "Pass": false
+  },
+  {
+    "File": "wake-hey-Alfred.wav",
+    "Recognized": "(none)",
+    "Confidence": 0,
+    "Accepted": false,
+    "Expected": true,
+    "Pass": false
+  }
+]

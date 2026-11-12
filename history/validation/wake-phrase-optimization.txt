@@ -1,0 +1,14 @@
+﻿Recognizer: MS-1033-80-DESK (en-US)
+TTS voice: Microsoft David Desktop (en-US)
+TTS voice: Microsoft Zira Desktop (en-US)
+Alfred | Alfred | confidence=0.953 first=0.953 | accepted=False expected=False | 42ms
+hello Alfred | hello Alfred | confidence=0.952 first=0.949 | accepted=True expected=True | 37ms
+hey Alfred | hey Alfred | confidence=0.917 first=0.840 | accepted=True expected=True | 32ms
+okay Alfred | okay Alfred | confidence=0.947 first=0.945 | accepted=True expected=True | 29ms
+ok Alfred | okay Alfred | confidence=0.947 first=0.945 | accepted=True expected=True | 32ms
+hello Alfred bhai | hello Alfred bye | confidence=0.947 first=0.950 | accepted=True expected=True | 32ms
+hey Alfred bhai | hey Alfred bye | confidence=0.927 first=0.876 | accepted=True expected=True | 37ms
+okay Alfred bhai | okay Alfred bye | confidence=0.939 first=0.943 | accepted=True expected=True | 41ms
+ok Alfred bhai | okay Alfred bye | confidence=0.939 first=0.943 | accepted=True expected=True | 32ms
+hello Alfred bye | hello Alfred bye | confidence=0.949 first=0.950 | accepted=True expected=True | 29ms
+hello Alfred with 700ms gap | hello Alfred | confidence=0.952 first=0.949 | accepted=True expected=True | 26ms

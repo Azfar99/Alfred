@@ -1,0 +1,7 @@
+{
+  "setup": "F:\\Alfred\\releases\\Alfred-2.0.1-Windows-x64-Setup.exe",
+  "bytes": 218817920,
+  "sha256": "a0c6340af971346bfaba264ebaa44b2dc3d8ba994295acefd5ac5534ed6ea583",
+  "payload": "F:\\Alfred\\build\\installer-payload-aaf66236daa94d398976aac9b85bbdcd\\app",
+  "payloadPruned": true
+}

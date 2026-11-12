@@ -1,0 +1,1 @@
+PASS: microphone stays off at startup, rejects listen requests, and stays off after restart.

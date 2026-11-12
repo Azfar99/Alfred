@@ -1,0 +1,8 @@
+PASS silent install into isolated F: folder
+PASS all installed files match release manifest
+PASS no build scratch files or microphone recordings bundled
+PASS installed managed self-tests and native voice model check
+PASS mic-off startup and clean shutdown
+PASS installed/dev instance IPC isolation
+PASS reinstall/update preserves notes and microphone preference
+PASS uninstall removes app/registration and preserves user notes

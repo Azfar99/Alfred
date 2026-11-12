@@ -14,13 +14,15 @@ namespace Alfred {
             if(text.Length==0)return null;
             if(DictationStop.IsMatch(Commands.Normalize(Clean(text))))return new Intent("dictation-stop","","ডিক্টেশন শেষ। লেখা দেখে নাও");
             Match edit=EditPrefix.Match(text);
-            if(!edit.Success)return new Intent("draft-dictate",text,"কথা থেকে লিখেছি");
-            Intent action=Parse(edit.Groups[1].Value);
+            string control=edit.Success?edit.Groups[1].Value:Regex.Replace(text,@"^(?:alfred|আলফ্রেড)[\s,:।.!?]+","",RegexOptions.IgnoreCase);
+            Intent action=Parse(control);
+            if(action!=null&&action.Kind=="draft-send")return new Intent("dictation-send","","পাঠানোর নির্দেশ পেয়েছি—চ্যাটের খসড়া পাঠাচ্ছি");
             if(action!=null)switch(action.Kind){
                 case "draft-rewrite":case "draft-append":case "draft-replace":case "draft-remove":
-                case "draft-delete-word":case "draft-delete-sentence":case "draft-new-line":case "draft-undo":return action;
+                case "draft-delete-word":case "draft-delete-sentence":case "draft-new-line":case "draft-undo":case "draft-clear":return action;
             }
-            return new Intent("dictation-edit-unknown","","এডিটের নির্দেশ বুঝিনি। বলো: এডিট কমান্ড, শেষ বাক্যটা মুছো");
+            if(!edit.Success)return new Intent("draft-dictate",text,"কথা থেকে লিখেছি");
+            return new Intent("dictation-edit-unknown","","এডিটের নির্দেশ বুঝিনি। বলো: শেষ বাক্যটা মুছো");
         }
         public static Intent Parse(string raw){
             string text=(raw??"").Trim();
@@ -101,6 +103,9 @@ namespace Alfred {
             Intent edit=ParseDictation("এডিট কমান্ড, change hello to hi");
             Intent unsafeEdit=ParseDictation("এডিট কমান্ড, open Chrome");
             if(stop==null||stop.Kind!="dictation-stop"||edit==null||edit.Kind!="draft-replace"||unsafeEdit==null||unsafeEdit.Kind!="dictation-edit-unknown")throw new Exception("Dictation stop/edit boundary failed");
+            string[][] liveControls={new[]{"শেষ শব্দটা মুছে দাও","draft-delete-word"},new[]{"সব লেখা মুছে দাও","draft-clear"},new[]{"change hello to hi","draft-replace"},new[]{"এবার পাঠাও","dictation-send"},new[]{"Alfred, send it","dictation-send"}};
+            foreach(string[] c in liveControls){Intent action=ParseDictation(c[0]);if(action==null||action.Kind!=c[1])throw new Exception("Natural dictation control failed: "+c[0]);}
+            foreach(string payload in new[]{"I told him to send it","এবার পাঠাও না","Please open Notepad and write hello. Then send it."})if(ParseDictation(payload).Kind!="draft-dictate")throw new Exception("Embedded or negated send became an action");
             Intent punctuation=ParseDictation("I will call you back tomorrow. এরপর দেখা হবে।");
             if(punctuation==null||punctuation.Value!="I will call you back tomorrow. এরপর দেখা হবে।")throw new Exception("Bilingual dictation punctuation failed");
             string[][] cases={

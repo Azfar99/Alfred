@@ -1,0 +1,42 @@
+﻿PASS এখন তুমি ক্যালকুলেটর খোলো => calculator
+PASS একটু ক্রোমে ঢুকে ইউটিউবে যাও => website
+PASS এখন পিসি বন্ধ করো => shutdown
+PASS পিসি বন্ধ করো না => unknown
+PASS পিসি বন্ধ না, ক্রোম খোলো => unknown
+PASS রিস্টার্ট না। => unknown
+PASS শাটডাউন বাতিল করো => cancel-power
+PASS ভলিউম কমাও => volume-down
+PASS সাউন্ড বাড়াও => volume-up
+PASS নোটপ্যাড চালু করো => notepad
+PASS নোর্ডপেট খুলত হিটু? => notepad
+PASS নোট প্যাড খোলো => notepad
+PASS ক্রোমে example.com এ যাও => website
+PASS গুগলে সার্চ করো বাংলাদেশের আবহাওয়া => website
+PASS কয়টা বাজে => time
+PASS মাইক বন্ধ করো => pause
+PASS আলফ্রেড বন্ধ করো => quit
+PASS open calculator => calculator
+PASS Can you open the calculator for me? => calculator
+PASS javascript:alert(1) => unknown
+PASS মাইকটা অফ রাখো => pause
+PASS এখন আপাতত মাইক্রোফোন বন্ধ রাখো => pause
+PASS পাঁচ মিনিটের টাইমার দাও => timer
+PASS নয় মিনিট টাইমার => timer
+PASS টাইমার বাতিল করো => timer-cancel
+PASS টাইমারে কত সময় বাকি => timer-remaining
+PASS নোট লিখে রাখো কালকে বাজার করব না => note-save
+PASS নোট লিখে রাখো পিসি বন্ধ করো => note-save
+PASS আমার নোট খোলো => notes-open
+PASS ডাউনলোড ফোল্ডার খোলো => user-folder
+PASS ডিসকর্ড খোলো => app
+PASS এক্সেল চালু করো => app
+PASS পরের গান দাও => media-next
+PASS আজকের তারিখ বলো => date
+PASS ইউটিউবে সার্চ করো বাংলা গান => website
+PASS Bengali/English timer durations and bounds
+PASS bilingual continuous dictation, edit-only control, explicit sending, negation, screenshot and research routing
+PASS draft review/edit, incremental append, exact bilingual contact matching, trusted chat domains, single confirmed send and uncertain-send blocking
+PASS screenshot halves/corners, multi-monitor coordinates and output root
+PASS arithmetic precedence, Bengali digits, percent and zero-division
+PASS Windows x64 keyboard input ABI
+PASS continuous speech queue, VAD segmentation, silence, overflow, and cancellation

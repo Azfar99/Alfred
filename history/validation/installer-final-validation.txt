@@ -1,0 +1,4 @@
+PASS final Setup install; 34 installed file SHA256 checks
+PASS no scratch folders or microphone recordings packaged
+PASS final installed self-test/native checks and real CPU transcription
+PASS final Setup uninstall preserves notes

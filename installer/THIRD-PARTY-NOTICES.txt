@@ -1,0 +1,14 @@
+Alfred bundled components
+
+whisper.cpp v1.9.5 CPU runtime and ggml: MIT; https://github.com/ggml-org/whisper.cpp
+Whisper multilingual small Q5 weights: MIT; https://huggingface.co/ggerganov/whisper.cpp ; upstream small-q5_1 SHA1 6fe57ddcfdd1c6b07cdcc73aaf620810ce5fc771
+sherpa-onnx 1.13.8: Apache-2.0; https://github.com/k2-fsa/sherpa-onnx
+GigaSpeech3.3M English keyword model: Apache-2.0 per original model card; https://www.modelscope.cn/models/pkufool/sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01
+ONNX Runtime: MIT; https://github.com/microsoft/onnxruntime
+Silero VAD: MIT; https://github.com/snakers4/silero-vad
+miniaudio: dual public domain / MIT-0; https://github.com/mackron/miniaudio
+Full upstream license notices are in licenses/.
+
+Microsoft Visual C++ Redistributable is Microsoft software, digitally signed by Microsoft Corporation and governed by its own distribution/license terms. The bundled official installer installs it only when needed. Windows/.NET/System.Speech voices belong to Microsoft and are not bundled.
+
+An optional CUDA package requires review/preservation of NVIDIA runtime redistribution notices before publishing; the standard installer contains no CUDA/NVIDIA libraries and no unknown-provenance Bengali fine-tuned model.

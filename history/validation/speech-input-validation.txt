@@ -1,0 +1,45 @@
+Alfred speech-input validation — 2026-11-12
+
+Implementation under test: source/SpeechInput.cs; official sherpa-onnx C API 1.13.8, int8 GigaSpeech 3.3M keyword model and Silero VAD, CPU with one inference thread.
+
+Automated managed checks (PASS):
+- Queued audio can be consumed after it has accumulated, representing collection during ASR.
+- VAD-flagged speech segment retains pre-roll, expected voice-frame count and amplitude.
+- Silent frames do not become speech.
+- More than 90 seconds of queued PCM explicitly reports overflow.
+- Cancelled Next exits with OperationCanceledException.
+
+Offline native keyword probes with Microsoft David Desktop, 16 kHz mono PCM:
+PASS: Hello Alfred -> 1 wake
+PASS: Hey Alfred -> 1 wake
+PASS: Okay Alfred -> 1 wake (reported alias: ok alfred)
+PASS: OK Alfred -> 1 wake
+PASS: Hello Alfred open calculator -> 1 wake; first sample 5120, estimated end 16320. This test checks detection, not command execution.
+PASS negative: Alfred -> 0 wakes
+PASS negative: I was telling my friend about hello Alfred and his new features -> 0 wakes
+PASS negative: Please open the calculator for me -> 0 wakes
+
+Existing local wake-optimization recordings (22.05 kHz, resampled for the same native probe):
+0 -> 0 wakes
+1 -> 1 wake
+2 -> 1 wake
+3 -> 1 wake
+4 -> 1 wake
+5 -> 1 wake
+6 -> 1 wake
+7 -> 1 wake
+8 -> 1 wake
+9 -> 1 wake
+10 -> 0 wakes
+These original clip labels were not independently verified in this audit, so the individual results are observations, not an accuracy score.
+
+Brief real-device lifecycle smoke test (KWS disabled, audio kept only in memory):
+PASS: microphone samples progressed from 8192 to 32256 over approximately 1.5 seconds; Error remained empty.
+PASS: disposing a session while Next waited woke the reader with ObjectDisposedException within the 3-second test bound.
+PASS: microphone stop/reset, callback drain, worker join and native disposal completed.
+
+Harnesses retained for reproducibility:
+- SpeechProbe.cs / SpeechProbe.exe: managed self-check plus synthetic positive/negative native probes and optional old clip probes.
+- MicLifecycle.cs / MicLifecycle.exe: microphone delivery and concurrent reader disposal.
+
+Limits: no claim of universal accent recognition, Bengali/English ASR accuracy, acoustic echo cancellation, or end-to-end third-party chat sending. Keyword timing estimates should be tested alongside the root command handoff; preserving the full wake phrase in ASR and stripping it from the transcript avoids cutting an attached command.

@@ -88,3 +88,35 @@ Preserve the user's saved icon position and microphone setting. Do not automatic
 ## GitHub publishing preference
 
 After a major Alfred feature or fix, ask the user whether they want the changes pushed to GitHub. When the user asks about publishing/syncing, remind them that I can prepare and push the project through their GitHub account. The Alfred repository is public per the user request on 2026-11-12; keep this visibility until the user changes it.
+
+## Alfred 2.0 speech foundation — 2026-11-12
+
+- Replaced System.Speech wake recognition with sherpa-onnx 1.13.8 Zipformer int8 custom keyword spotting and Silero neural VAD. Windows System.Speech remains for the installed David TTS voice only.
+- One continuous 16kHz mono microphone with bounded RAM queues collects speech through transcription. Full wake pre-roll preserves commands spoken immediately after the greeting. Microphone pause closes capture; no audio is sent to a cloud.
+- Added on-demand CUDA Whisper large-v3-turbo Q5 on the RTX3060. Model SHA256: 394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2. No Python/server is resident. CPU fallback remains available after genuine GPU failure.
+- Same recorded clips: old CPU4193/4751/4273ms; turbo GPU1141/1296/1339ms. Turbo peak working441–450MiB; private committed1807–1870MiB. Resources release when the child exits. New parent idle observed about98–103MiB. Do not claim lower peak RAM.
+- Auto mode retries predominantly unexpected scripts once with Bengali; tray allows explicit Bengali/English/auto. Bengali sample remains inaccurate: no claim of solved Bengali recognition.
+- Chat dictation keeps audio queued during decoding. Whole-utterance edits work naturally; an exact send ends dictation and sends only to the pinned reviewed target. Focused composer preferred, verified incremental append, bounded write polling, uncertain-send state invalidated to prevent duplicates.
+- Build passes42 managed checks plus a native model/ABI load check before deployment. Synthetic wake5positives/3negatives and microphone lifecycle/cancellation tests passed. Reports in build/speech-api and build/speech-upgrade-benchmark.tsv (ignored for privacy).
+- User real-microphone test reported NO wake response. This is still unresolved; diagnostic counters now expose peak input, neural voice frames and exact KWS candidates/rejections. A fresh live probe is pending. Do not describe this release as production-ready or fully fixed.
+- All work remains F:/Alfred. Major update awaits user decision before GitHub push.
+
+Live tuning follow-up: real microphone showed peak100 and neural speech frames but0KWS candidates at score1.5/threshold0.25. Adjusted greeted keywords to score3/threshold0.10; reran all5synthetic positives and3negatives successfully. User then confirmed an actual wake response. Real command/ASR confirmation is still pending.
+
+Live end-to-end confirmation: user said Hello Alfred + Bengali calculator command and confirmed Calculator opened. This validates one real wake-to-command execution; it does not validate arbitrary Bengali/mixed speech or third-party chat sending. Natural chat edit/send state tests passed, but live platform UI tests remain unverified.
+
+## Outer-look update — 2026-11-12
+Blue/cyan woven ribbon orb with subtle rotating orbital highlights, a small dim idle nucleus and bright active nucleus. Voice expands/disturbs ribbons. Cached pens/brushes replace per-frame allocations. Same renderer used for desktop and build/orb-visual-preview.png. Two idle preview frames800ms apart differ;42managed checks/native speech check passed and deployment succeeded. Mic/wake/session behavior unchanged. GitHub push remains pending.
+
+## Installable release - 2026-11-12
+
+Alfred2.0.1 standard Windows x64 offline Setup is ready: releases/Alfred-2.0.1-Windows-x64-Setup.exe (218817920 bytes). SHA256: a0c6340af971346bfaba264ebaa44b2dc3d8ba994295acefd5ac5534ed6ea583. Sidecar SHA256 and release manifest included.
+
+Installer scripts are under installer/. Inno Setup6.7.4 compiler hash/signature and Microsoft VC++ prerequisite signature verified. Includes official multilingual small Q5 CPU model, whisper runtime, sherpa wake, Silero VAD, docs and upstream notices. Excludes personal notes/settings/audio, source/build scratch, CUDA downloads and unknown-provenance Bengali-tuned model. Source checkout retains CUDA Turbo.
+
+Added per-install-root IPC so separate installations do not control the development copy, assembly metadata/icon, per-user shortcuts, same-AppId updates and uninstall. Default folder F:/Apps/Alfred if F: exists, otherwise user LocalAppData/Programs/Alfred. Notes/settings remain in the chosen folder and survive updates/uninstall. No autostart.
+
+Passed isolated real install: manifest checksums; no scratch/audio files packaged; installed managed/native checks; mic-off startup/quit; IPC isolation; reinstall preserving notes/mic setting; uninstall removing binaries/registration while retaining notes. Installed CPU model recognized calculator request and parsed Calculator in3373ms. Reports: build/installer-validation.txt and build/installer-cpu-validation.txt. Fresh-PC/no-VC-runtime branch remains untested; signing not configured.
+
+Generated releases/ files are ignored by Git. Attach Setup, checksum and manifest to a GitHub Release during the next authorized publish. No push/publish this turn.
+Final rebuilt artifact:34 installed file SHA256 checks passed; no scratch directory bundled; installed CPU transcription3496ms and uninstall/retained-notes check passed. Manifest path filtering was corrected to compare relative payload paths and reject empty/incomplete manifests. Final report: build/installer-final-validation.txt.

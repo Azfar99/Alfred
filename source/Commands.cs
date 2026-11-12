@@ -99,7 +99,7 @@ namespace Alfred {
             return new Intent("unknown","","এই কমান্ডটা এখনও পারি না। বাম ক্লিক করে কমান্ডের তালিকা দেখো।");
         }
         public static string SelfTest() {
-            if(!Orb.WakePhraseStartsAtUtterance(-300)||!Orb.WakePhraseStartsAtUtterance(0)||!Orb.WakePhraseStartsAtUtterance(1200)||Orb.WakePhraseStartsAtUtterance(-301)||Orb.WakePhraseStartsAtUtterance(1201))throw new Exception("Wake phrase utterance-start gate failed");
+            if(!Orb.WakePhraseStartsAtUtterance(-300)||!Orb.WakePhraseStartsAtUtterance(0)||!Orb.WakePhraseStartsAtUtterance(1200)||Orb.WakePhraseStartsAtUtterance(-301)||Orb.WakePhraseStartsAtUtterance(1201)||Orb.WakePhraseStartsAtUtterance(-1))throw new Exception("Wake phrase utterance-start gate failed");
             string[][] cases={
                 new[]{"এখন তুমি ক্যালকুলেটর খোলো","calculator"},
                 new[]{"একটু ক্রোমে ঢুকে ইউটিউবে যাও","website"},

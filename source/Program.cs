@@ -19,20 +19,28 @@ namespace Alfred {
         public static readonly string Data=Path.Combine(Root,"data"), Temp=Path.Combine(Root,"temp");
         public static readonly int ProcessId=Process.GetCurrentProcess().Id;
         static Mutex mutex;
+        static readonly string IpcId=MakeIpcId();
+        static string MakeIpcId(){using(var hash=System.Security.Cryptography.SHA256.Create()){byte[] bytes=hash.ComputeHash(Encoding.UTF8.GetBytes(Root.ToLowerInvariant()));return BitConverter.ToString(bytes,0,8).Replace("-","");}}
         public static EventWaitHandle PanelEvent,ListenEvent,QuitEvent,PreviewEvent;
         [STAThread] static void Main(string[] args) {
             Directory.CreateDirectory(Data);Directory.CreateDirectory(Temp);
             Environment.SetEnvironmentVariable("TEMP",Temp);Environment.SetEnvironmentVariable("TMP",Temp);
             Environment.CurrentDirectory=Root;
+            if(args.Length>0&&args[0]=="--check-speech-engine"){
+                Directory.CreateDirectory(Path.Combine(Root,"build"));
+                try{using(SpeechInput input=new SpeechInput(Path.Combine(Root,"engine","sherpa"),Path.Combine(Root,"models")))input.ValidateModels();File.WriteAllText(Path.Combine(Root,"build","native-check.txt"),"PASS sherpa-onnx 1.13.8 native ABI, wake models and neural VAD loaded without opening the microphone.");}
+                catch(Exception ex){File.WriteAllText(Path.Combine(Root,"build","native-check.txt"),ex.ToString());Environment.ExitCode=1;}return;
+            }
             if(args.Length>0 && args[0]=="--self-test") {
-                try {File.WriteAllText(Path.Combine(Root,"build","tests.txt"),Commands.SelfTest(),Encoding.UTF8);Environment.ExitCode=0;}
+                Directory.CreateDirectory(Path.Combine(Root,"build"));
+                try {File.WriteAllText(Path.Combine(Root,"build","tests.txt"),Commands.SelfTest()+SpeechInput.SelfTest(),Encoding.UTF8);Environment.ExitCode=0;}
                 catch(Exception ex){File.WriteAllText(Path.Combine(Root,"build","tests.txt"),ex.ToString(),Encoding.UTF8);Environment.ExitCode=1;}return;
             }
-            PanelEvent=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\Alfred.Panel.F");
-            ListenEvent=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\Alfred.Listen.F");
-            QuitEvent=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\Alfred.Quit.F");
-            PreviewEvent=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\Alfred.Preview.F");
-            bool first;mutex=new Mutex(true,"Local\\Alfred.SmallAssistant.F",out first);
+            PanelEvent=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\Alfred.Panel."+IpcId);
+            ListenEvent=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\Alfred.Listen."+IpcId);
+            QuitEvent=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\Alfred.Quit."+IpcId);
+            PreviewEvent=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\Alfred.Preview."+IpcId);
+            bool first;mutex=new Mutex(true,"Local\\Alfred.SmallAssistant."+IpcId,out first);
             if(!first){if(args.Length>0){if(args[0]=="--panel")PanelEvent.Set();if(args[0]=="--listen")ListenEvent.Set();if(args[0]=="--preview")PreviewEvent.Set();if(args[0]=="--quit")QuitEvent.Set();}return;}
             if(args.Length>0&&args[0]=="--quit")return;
             if(args.Length>0&&args[0]=="--panel")PanelEvent.Set();
@@ -53,12 +61,11 @@ namespace Alfred {
         readonly NotifyIcon tray=new NotifyIcon();
         readonly Bitmap surface=new Bitmap(160,160,PixelFormat.Format32bppArgb);
         Graphics surfaceGraphics;
-        readonly PointF[] wavePoints=new PointF[193];
-        static readonly Color[] WavePalette={Color.FromArgb(57,183,255),Color.FromArgb(129,104,255),Color.FromArgb(255,64,186),Color.FromArgb(255,137,85)};
-        SpeechRecognitionEngine wake;
-        volatile WaveCapture capture;
-        Process transcriber;
-        volatile bool closing,paused,cancelJob;
+        readonly OrbVisual orbVisual=new OrbVisual();
+        SpeechInput speechInput; SpeechSession speechSession;
+        readonly SpeechTranscriber speech=new SpeechTranscriber(Program.Root,Program.Temp);
+        int speechStarting; long wakeEndSample=-1;
+        volatile bool closing,paused;
         volatile bool inputBusy,screenshotBusy;
         readonly DraftSession draft=new DraftSession();
         IntPtr commandWindow;
@@ -72,19 +79,16 @@ namespace Alfred {
         string phase="starting", message="চালু হচ্ছে…", lastHeard="",lastResult="",pendingPower="";
         DateTime powerDeadline;
         int audioLevel,diameter=160;
-        int wakeAudioLevel,wakeAudioEvents,wakeSpeechDetected,wakeRejected,wakeRecognized,wakeAccepted,wakeFiltered,wakeConfidence,wakeFirstConfidence,wakeLastStartOffsetMs=-1;
-        long wakeSpeechStartTicks=-1;
+        int wakeRecognized,wakeAccepted;
         int speechBusy;
         bool dictating;
-        string dictationLanguage="";
+        string dictationLanguage="",speechLanguage="auto";
         bool retryCommand;
         int commandRetries;
         int lastCapturePeak,lastCaptureDuration,lastCaptureVoiceFrames;
         bool lastCaptureHeard;
         volatile string wakeLastCandidate="",wakeLastDecision="none",commandStage="none",lastCommandKind="";
         DateTime nextMetricsWrite=DateTime.MinValue;
-        readonly object wakeTraceGate=new object();
-        readonly List<string> wakeTrace=new List<string>();
         float visualLevel;
         Form panel; Label panelState,panelHeard; TextBox panelInput; Button panelMic;
         CancellationTokenSource job;
@@ -118,13 +122,16 @@ namespace Alfred {
             tray.Text=paused?"Alfred — মাইক বন্ধ (ক্লিক করে চালু করো)":state=="recording"?"Alfred — বাংলা / English শুনছি":"Alfred — Hello / Hey / Okay Alfred";
             RefreshOverlay(true);WriteStatus();Render();
         }
-        void TraceWake(string kind,RecognitionResult result){try{string text=result==null?"":(result.Text??"").Trim();double confidence=result==null?0:result.Confidence;int count=result==null?0:result.Words.Count;string line=kind+":"+(text.Length==0?"(empty)":text)+";c="+confidence.ToString("F2",CultureInfo.InvariantCulture)+";words="+count;lock(wakeTraceGate){if(wakeTrace.Count==8)wakeTrace.RemoveAt(0);wakeTrace.Add(line);}}catch{}}
-        string WakeTraceJson(){lock(wakeTraceGate){return Program.Json(String.Join(" | ",wakeTrace.ToArray()));}}
-        public static bool WakePhraseStartsAtUtterance(int offsetMs){return offsetMs>=-300&&offsetMs<=1200;}
-        void WriteStatus(){try{using(Process current=Process.GetCurrentProcess())File.WriteAllText(Path.Combine(Program.Data,"status.json"),"{\"state\":"+Program.Json(phase)+",\"message\":"+Program.Json(message)+",\"microphonePaused\":"+(paused?"true":"false")+",\"wakeEngineReady\":"+(wake!=null?"true":"false")+",\"wakeAudioLevel\":"+Interlocked.CompareExchange(ref wakeAudioLevel,0,0)+",\"wakeAudioEvents\":"+Interlocked.CompareExchange(ref wakeAudioEvents,0,0)+",\"wakeSpeechDetected\":"+Interlocked.CompareExchange(ref wakeSpeechDetected,0,0)+",\"wakeRejected\":"+Interlocked.CompareExchange(ref wakeRejected,0,0)+",\"wakeRecognized\":"+Interlocked.CompareExchange(ref wakeRecognized,0,0)+",\"wakeAccepted\":"+Interlocked.CompareExchange(ref wakeAccepted,0,0)+",\"wakeFiltered\":"+Interlocked.CompareExchange(ref wakeFiltered,0,0)+",\"wakeLastCandidate\":"+Program.Json(wakeLastCandidate)+",\"wakeLastDecision\":"+Program.Json(wakeLastDecision)+",\"wakeLastStartOffsetMs\":"+Interlocked.CompareExchange(ref wakeLastStartOffsetMs,-1,-1)+",\"wakeRecentEvents\":"+WakeTraceJson()+",\"wakeConfidence\":"+(Interlocked.CompareExchange(ref wakeConfidence,0,0)/1000.0).ToString("F3",CultureInfo.InvariantCulture)+",\"wakeFirstConfidence\":"+(Interlocked.CompareExchange(ref wakeFirstConfidence,0,0)/1000.0).ToString("F3",CultureInfo.InvariantCulture)+",\"commandStage\":"+Program.Json(commandStage)+",\"dictationActive\":"+(dictating?"true":"false")+",\"commandHeard\":"+(lastCaptureHeard?"true":"false")+",\"commandPeakLevel\":"+lastCapturePeak+",\"commandDurationMs\":"+lastCaptureDuration+",\"commandVoiceFrames\":"+lastCaptureVoiceFrames+",\"lastCommandKind\":"+Program.Json(lastCommandKind)+",\"overlayVisible\":"+(!overlayHidden?"true":"false")+",\"timers\":"+timers.Count+",\"workingSetMB\":"+(current.WorkingSet64/1048576.0).ToString("F1",CultureInfo.InvariantCulture)+",\"x\":"+Left+",\"y\":"+Top+",\"size\":"+diameter+",\"version\":\"1.7\"}",Encoding.UTF8);}catch{}}
+        public static bool WakePhraseStartsAtUtterance(int offsetMs){return offsetMs!=-1&&offsetMs>=-300&&offsetMs<=1200;}
+        void WriteStatus(){try{using(Process current=Process.GetCurrentProcess()){
+            SpeechInput input=speechInput;
+            string json="{\"version\":\"2.0\",\"state\":"+Program.Json(phase)+",\"message\":"+Program.Json(message)+",\"microphonePaused\":"+(paused?"true":"false")+",\"wakeEngineReady\":"+(input!=null&&input.Error.Length==0?"true":"false")+",\"wakeBackend\":\"sherpa-onnx Zipformer int8\",\"voiceDetector\":\"Silero VAD\",\"microphoneLevel\":"+(input==null?0:input.Level)+",\"microphonePeak\":"+(input==null?0:input.PeakInput)+",\"voiceFrames\":"+(input==null?0:input.VoiceFrameCount)+",\"wakeCandidates\":"+(input==null?0:input.WakeCandidates)+",\"wakeRejected\":"+(input==null?0:input.WakeRejected)+",\"wakeDetectorDecision\":"+Program.Json(input==null?"":input.LastDecision)+",\"wakeDetectorCandidate\":"+Program.Json(input==null?"":input.LastCandidate)+",\"audioSamples\":"+(input==null?0:input.CurrentSample)+",\"speechError\":"+Program.Json(input==null?"":input.Error)+",\"wakeAccepted\":"+wakeAccepted+",\"wakeLastCandidate\":"+Program.Json(wakeLastCandidate)+",\"wakeLastDecision\":"+Program.Json(wakeLastDecision)+",\"commandStage\":"+Program.Json(commandStage)+",\"dictationActive\":"+(dictating?"true":"false")+",\"commandHeard\":"+(lastCaptureHeard?"true":"false")+",\"commandPeakLevel\":"+lastCapturePeak+",\"commandDurationMs\":"+lastCaptureDuration+",\"commandVoiceFrames\":"+lastCaptureVoiceFrames+",\"lastCommandKind\":"+Program.Json(lastCommandKind)+",\"speechBackend\":"+Program.Json(speech.Backend)+",\"speechLanguage\":"+Program.Json(speechLanguage)+",\"scriptRetry\":"+(speech.ScriptRetry?"true":"false")+",\"decodedLanguage\":"+Program.Json(speech.Language)+",\"transcribeMs\":"+speech.ElapsedMs+",\"speechFallback\":"+(speech.FallbackUsed?"true":"false")+",\"transcribePeakWorkingMB\":"+(speech.PeakWorkingSetBytes/1048576.0).ToString("F1",CultureInfo.InvariantCulture)+",\"transcribePeakPrivateMB\":"+(speech.PeakPrivateBytes/1048576.0).ToString("F1",CultureInfo.InvariantCulture)+",\"overlayVisible\":"+(!overlayHidden?"true":"false")+",\"timers\":"+timers.Count+",\"workingSetMB\":"+(current.WorkingSet64/1048576.0).ToString("F1",CultureInfo.InvariantCulture)+",\"x\":"+Left+",\"y\":"+Top+",\"size\":"+diameter+"}";
+            File.WriteAllText(Path.Combine(Program.Data,"status.json"),json,Encoding.UTF8);
+        }}catch{}}
         void ReadSettings(){
             Rectangle area=Screen.PrimaryScreen.WorkingArea;Location=new Point(area.Right-diameter-18,area.Top+54);
             try{string[] v=File.ReadAllLines(Path.Combine(Program.Data,"position.ini"));Location=Clamp(new Point(Int32.Parse(v[0]),Int32.Parse(v[1])));}catch{}
+            try{string saved=File.ReadAllText(Path.Combine(Program.Data,"speech-language.ini")).Trim();if(saved=="bn"||saved=="en")speechLanguage=saved;}catch{}
             try{paused=File.ReadAllText(Path.Combine(Program.Data,"microphone-paused.ini")).Trim()=="true";}catch{}
             try{foreach(string line in File.ReadAllLines(Path.Combine(Program.Data,"timers.txt"))){long ticks;if(Int64.TryParse(line,out ticks)&&ticks>=DateTime.MinValue.Ticks&&ticks<=DateTime.MaxValue.Ticks&&timers.Count<8)timers.Add(new DateTime(ticks,DateTimeKind.Utc));}}catch{}
         }
@@ -159,63 +166,36 @@ namespace Alfred {
             if(Program.PreviewEvent.WaitOne(0)){previewUntil=DateTime.UtcNow.AddSeconds(8);RefreshOverlay(true);Render();}
             bool timerDone=false;for(int n=timers.Count-1;n>=0;n--)if(DateTime.UtcNow>=timers[n]){timers.RemoveAt(n);timerDone=true;}
             if(timerDone){SaveTimers();Helpers.Notice("টাইমার শেষ হয়েছে।");WriteStatus();}
-            WaveCapture currentCapture=capture;audioLevel=currentCapture!=null?currentCapture.Level:0;
-            if(DateTime.UtcNow>=nextMetricsWrite){nextMetricsWrite=DateTime.UtcNow.AddMilliseconds(800);WriteStatus();}
+            audioLevel=speechInput!=null?speechInput.Level:0;
+            if(DateTime.UtcNow>=nextMetricsWrite){nextMetricsWrite=DateTime.UtcNow.AddMilliseconds(800);WriteStatus();if(panelState!=null&&!panelState.IsDisposed&&speechInput!=null)panelState.Text=message+"\nমাইকের জোর: "+speechInput.Level+" / 100 · voice frames: "+speechInput.VoiceFrameCount;}
             if(pendingPower.Length>0 && DateTime.UtcNow>=powerDeadline){string action=pendingPower;pendingPower="";LaunchHidden(Path.Combine(Environment.SystemDirectory,"shutdown.exe"),(action=="restart"?"/r":"/s")+" /t 0");}
             RefreshOverlay(false);if(!overlayHidden)Render();
         }
         void StartWake(){
-            if(closing||paused||wake!=null||Interlocked.CompareExchange(ref speechBusy,0,0)!=0)return;
-            int generation=Interlocked.Increment(ref wakeGeneration);
-            SetState("starting","মাইক্রোফোন চালু হচ্ছে…");
+            if(closing||paused||busy||inputBusy||Interlocked.CompareExchange(ref speechBusy,0,0)!=0)return;
+            if(speechInput!=null&&speechInput.Error.Length>0)CloseSpeechInput();
+            if(speechInput!=null){speechInput.Enabled=true;SetState("idle","Hello / Hey / Okay Alfred বলো · Ctrl+Alt+A দিয়েও কথা বলা যায়");return;}
+            if(Interlocked.CompareExchange(ref speechStarting,1,0)!=0)return;
+            int generation=Interlocked.Increment(ref wakeGeneration);SetState("starting","নতুন wake ও voice detector চালু হচ্ছে…");
             ThreadPool.QueueUserWorkItem(delegate{
-                SpeechRecognitionEngine engine=null;
-                try {
-                    Interlocked.Exchange(ref wakeSpeechStartTicks,-1);
-                    var recognizers=SpeechRecognitionEngine.InstalledRecognizers();
-                    RecognizerInfo info=null;foreach(var r in recognizers)if(r.Culture.Name=="en-US"){info=r;break;}
-                    if(info==null)throw new Exception("ইংরেজি wake recognizer পাওয়া যায়নি");
-                    engine=new SpeechRecognitionEngine(info);
-                    string[] wakePhrases={"hello alfred","hey alfred","okay alfred","ok alfred","hello alfred bhai","hey alfred bhai","okay alfred bhai","ok alfred bhai","hello alfred bye","hey alfred bye","okay alfred bye","ok alfred bye","hello alfred vai","hey alfred vai","okay alfred vai","ok alfred vai"};
-                    GrammarBuilder greeting=new GrammarBuilder{Culture=info.Culture};
-                    greeting.Append(new Choices("hello","hey","okay","ok"));
-                    greeting.Append("Alfred");
-                    GrammarBuilder suffix=new GrammarBuilder{Culture=info.Culture};
-                    suffix.Append(new Choices("bhai","bye","vai"));
-                    greeting.Append(suffix,0,1);
-                    Grammar grammar=new Grammar(greeting);grammar.Name="AlfredWake";engine.LoadGrammar(grammar);
-                    GrammarBuilder bare=new GrammarBuilder{Culture=info.Culture};bare.Append("Alfred");
-                    Grammar bareGrammar=new Grammar(bare);bareGrammar.Name="AlfredNameOnly";engine.LoadGrammar(bareGrammar);
-                    engine.EndSilenceTimeout=TimeSpan.FromMilliseconds(700);engine.EndSilenceTimeoutAmbiguous=TimeSpan.FromMilliseconds(800);
-                    engine.AudioLevelUpdated+=delegate(object s,AudioLevelUpdatedEventArgs e){Interlocked.Increment(ref wakeAudioEvents);Interlocked.Exchange(ref wakeAudioLevel,e.AudioLevel);};
-                    engine.SpeechDetected+=delegate(object s,SpeechDetectedEventArgs e){Interlocked.Increment(ref wakeSpeechDetected);Interlocked.Exchange(ref wakeSpeechStartTicks,e.AudioPosition.Ticks);};
-                    engine.SpeechRecognitionRejected+=delegate(object s,SpeechRecognitionRejectedEventArgs e){
-                        Interlocked.Increment(ref wakeRejected);
-                        if(e.Result!=null){string candidate=(e.Result.Text??"").Trim();if(candidate.Length>0)wakeLastCandidate=candidate;Interlocked.Exchange(ref wakeConfidence,(int)(e.Result.Confidence*1000));Interlocked.Exchange(ref wakeFirstConfidence,e.Result.Words.Count>0?(int)(e.Result.Words[0].Confidence*1000):0);wakeLastDecision="rejected by recognizer";}
-                        TraceWake("rejected",e.Result);
+                SpeechInput created=null;
+                try{
+                    created=new SpeechInput(Path.Combine(Program.Root,"engine","sherpa"),Path.Combine(Program.Root,"models"));
+                    created.WakeDetected+=delegate(WakeHit hit){
+                        Interlocked.Increment(ref wakeRecognized);Interlocked.Increment(ref wakeAccepted);wakeLastCandidate=hit.Phrase;wakeLastDecision="keyword detected";
+                        Ui(delegate{if(!closing&&!paused&&!busy&&!inputBusy&&Interlocked.CompareExchange(ref speechBusy,0,0)==0){wakeEndSample=Math.Max(0,hit.StartSample-1600);commandStage="wake accepted";BeginListen();}});
                     };
-                    engine.SpeechRecognized+=delegate(object s,SpeechRecognizedEventArgs e){
-                        Interlocked.Increment(ref wakeRecognized);
-                        string phrase=(e.Result.Text??"").Trim();bool known=false;foreach(string acceptedPhrase in wakePhrases)if(String.Equals(phrase,acceptedPhrase,StringComparison.OrdinalIgnoreCase)){known=true;break;}
-                        double first=e.Result.Words.Count>0?e.Result.Words[0].Confidence:0;
-                        long speechStart=Interlocked.Read(ref wakeSpeechStartTicks);int startOffset=e.Result.Audio==null||speechStart<0?-1:(int)((e.Result.Audio.AudioPosition.Ticks-speechStart)/TimeSpan.TicksPerMillisecond);
-                        Interlocked.Exchange(ref wakeLastStartOffsetMs,startOffset);
-                        string candidate=(e.Result.Text??"").Trim();if(candidate.Length>0)wakeLastCandidate=candidate;Interlocked.Exchange(ref wakeConfidence,(int)(e.Result.Confidence*1000));Interlocked.Exchange(ref wakeFirstConfidence,(int)(first*1000));
-                        bool startsUtterance=WakePhraseStartsAtUtterance(startOffset);
-                        bool confident=known&&startsUtterance&&e.Result.Confidence>=0.55&&e.Result.Words.Count>=2&&e.Result.Words.Count<=3&&first>=0.50;
-                        if(confident){Interlocked.Increment(ref wakeAccepted);wakeLastDecision="accepted at utterance start";TraceWake("accepted@"+startOffset+"ms",e.Result);Ui(delegate{if(generation==wakeGeneration&&wake==engine&&!paused&&!busy){commandStage="wake accepted";RefreshOverlay(true);BeginListen();}});}
-                        else{Interlocked.Increment(ref wakeFiltered);wakeLastDecision=!known?"phrase not in wake grammar":!startsUtterance?"phrase inside longer speech":"low confidence";TraceWake(!startsUtterance?"filtered-offset@"+startOffset+"ms":"filtered",e.Result);}
-                    };
-                    engine.SpeechHypothesized+=delegate(object s,SpeechHypothesizedEventArgs e){TraceWake("hypothesis",e.Result);};
-                    engine.RecognizeCompleted+=delegate(object s,RecognizeCompletedEventArgs e){if(e.Error!=null)Ui(delegate{if(generation==wakeGeneration&&!busy&&!paused)SetState("error","মাইক সমস্যা—বাম ক্লিকে আবার চালু করো");});};
-                    engine.SetInputToDefaultAudioDevice();
-                    lock(engineGate){if(closing||paused||generation!=wakeGeneration){engine.Dispose();return;}wake=engine;engine.RecognizeAsync(RecognizeMode.Multiple);}
-                    Ui(delegate{if(generation==wakeGeneration&&!busy&&!paused)SetState("idle","‘হ্যালো/হেই আলফ্রেড ভাই’ বা ‘ওকে আলফ্রেড’ বলো");});
-                }catch(Exception ex){lock(engineGate){if(wake==engine)wake=null;}if(engine!=null)try{engine.Dispose();}catch{}Ui(delegate{if(generation==wakeGeneration&&!paused)SetState("error","মাইক চালু হয়নি: "+ex.Message);});}
+                    SpeechInput observed=created;created.Failed+=delegate(string reason){Ui(delegate{if(speechInput==observed&&!paused&&!closing){if(job!=null)job.Cancel();speech.Cancel();dictating=false;CloseSpeechInput();SetState("error",reason+" · মাইক বন্ধ/চালু করে আবার চেষ্টা করো");}});};
+                    created.Start();lock(engineGate){if(closing||paused||generation!=wakeGeneration){created.Dispose();return;}speechInput=created;}
+                    Ui(delegate{if(!closing&&!paused&&generation==wakeGeneration)SetState("idle","Hello / Hey / Okay Alfred বলো · Ctrl+Alt+A দিয়েও কথা বলা যায়");});
+                }catch(Exception ex){if(created!=null)created.Dispose();Ui(delegate{if(!closing&&!paused)SetState("error","Voice engine: "+ex.Message);});}
+                finally{Interlocked.Exchange(ref speechStarting,0);}
             });
         }
-        void DisposeWake(){Interlocked.Increment(ref wakeGeneration);Interlocked.Exchange(ref wakeAudioLevel,0);lock(engineGate){var old=wake;wake=null;if(old!=null){try{old.RecognizeAsyncCancel();old.SetInputToNull();old.Dispose();}catch{}}}}
-        void Pause(){paused=true;StopDictation(false);cancelJob=true;SaveMicrophone();if(job!=null)job.Cancel();DisposeWake();SetState("paused","মাইক বন্ধ—শুধু মেনু থেকে হাতে চালু হবে");}
+        void DisposeWake(){if(speechInput!=null)speechInput.Enabled=false;}
+        void EndSpeechSession(){SpeechSession old=speechSession;speechSession=null;if(old!=null)old.Dispose();}
+        void CloseSpeechInput(){Interlocked.Increment(ref wakeGeneration);EndSpeechSession();SpeechInput old;lock(engineGate){old=speechInput;speechInput=null;}if(old!=null)old.Dispose();}
+        void Pause(){paused=true;StopDictation(false);SaveMicrophone();if(job!=null)job.Cancel();speech.Cancel();CloseSpeechInput();SetState("paused","মাইক বন্ধ—শুধু মেনু থেকে হাতে চালু হবে");}
         void Resume(){if(busy){message="কাজ থামছে—একটু অপেক্ষা করো";return;}paused=false;SaveMicrophone();StartWake();}
         void ContinueListening(){
             if(closing||paused||busy||inputBusy||screenshotBusy||Interlocked.CompareExchange(ref speechBusy,0,0)!=0)return;
@@ -233,8 +213,9 @@ namespace Alfred {
         void StopDictation(bool announce){
             if(!dictating)return;
             dictating=false;
+            EndSpeechSession();
             if(!inputBusy)draft.EndDictation();
-            if(busy&&job!=null){cancelJob=true;job.Cancel();}
+            if(busy&&job!=null){job.Cancel();}
             if(announce){
                 Flash("চ্যাটের খসড়া থেমেছে। দেখে এডিট করো; পাঠাতে আলাদা করে বলো।",true);
                 SpeakResponse(new Intent("dictation-stop","",""),true);
@@ -244,96 +225,32 @@ namespace Alfred {
         void BeginListen(bool dictationSegment=false,bool continueCurrentCommand=false){
             if(closing||busy||inputBusy||screenshotBusy||Interlocked.CompareExchange(ref speechBusy,0,0)!=0)return;
             if(paused){Flash("মাইক বন্ধ আছে—ট্রে আইকনের মেনু থেকে হাতে চালু করো",false);return;}
-            if(!File.Exists(Path.Combine(Program.Root,"models","ggml-bengali-q5_1.bin"))){SetState("error","বাংলা/English মডেল পাওয়া যায়নি");return;}
-            if(!dictationSegment&&!continueCurrentCommand){
-                commandRetries=0;
-                retryCommand=false;
-                commandWindow=Native.GetForegroundWindow();
-                uint commandPid;
-                Native.GetWindowThreadProcessId(commandWindow,out commandPid);
-                if(commandPid==(uint)Program.ProcessId)commandWindow=lastExternalWindow;
-            }
-            busy=true;cancelJob=false;job=new CancellationTokenSource();lastHeard="";
-            CancellationToken token=job.Token;
-            string language=dictationSegment?dictationLanguage:"auto";
-            commandStage="opening capture";lastCapturePeak=lastCaptureDuration=lastCaptureVoiceFrames=0;lastCaptureHeard=false;lastCommandKind="";
-            SetState("activating",dictationSegment?"চ্যাটের খসড়া চলছে…":continueCurrentCommand?"আবার শুনছি… কমান্ডটা বলো":"কমান্ড শোনার প্রস্তুতি নিচ্ছি…");
+            if(speechInput==null){StartWake();Flash("Voice engine প্রস্তুত হচ্ছে—একটু পরে Ctrl+Alt+A চাপো",false);return;}
+            if(!dictationSegment&&!continueCurrentCommand){commandRetries=0;retryCommand=false;EndSpeechSession();commandWindow=Native.GetForegroundWindow();uint pid;Native.GetWindowThreadProcessId(commandWindow,out pid);if(pid==(uint)Program.ProcessId)commandWindow=lastExternalWindow;}
+            DisposeWake();busy=true;job=new CancellationTokenSource();lastHeard="";CancellationToken token=job.Token;string language=dictationSegment&&!String.IsNullOrEmpty(dictationLanguage)?dictationLanguage:speechLanguage;
+            commandStage="recording";lastCapturePeak=lastCaptureDuration=lastCaptureVoiceFrames=0;lastCaptureHeard=false;lastCommandKind="";
+            SetState("recording",dictationSegment?"কথা বলো—খসড়ায় লিখছি · সংশোধন বা ‘এবার পাঠাও’ বলা যাবে":continueCurrentCommand?"আবার শুনছি—কমান্ডটা বলো":"শুনছি—বাংলা বা English কমান্ড বলো");
             ThreadPool.QueueUserWorkItem(delegate{
-                string audio=Path.Combine(Program.Temp,"command.wav"),output=Path.Combine(Program.Temp,"command-transcript");
-                try {
-                    DisposeWake();
-                    if(token.IsCancellationRequested||closing)return;
-                    using(WaveCapture rec=new WaveCapture()) {
-                        capture=rec;rec.Start();
-                        Ui(delegate{if(!token.IsCancellationRequested&&!paused)SetState("recording",dictationSegment?"চ্যাটের খসড়া শুনছি—কথা বক্সে উঠবে, পাঠাব না":"শুনছি—বাংলা বা English কমান্ড বলো");});
-                        bool heard=rec.WaitForEnd(delegate{return closing||token.IsCancellationRequested;},dictationSegment?30:20,dictationSegment?2.0:1.0,dictationSegment?15:6);
-                        lastCapturePeak=rec.PeakLevel;lastCaptureDuration=rec.DurationMs;lastCaptureVoiceFrames=rec.VoiceFrames;lastCaptureHeard=heard;commandStage=heard?"capture complete":"no speech threshold";
-                        Ui(delegate{WriteStatus();});
-                        if(cancelJob||closing)return;
-                        if(!heard){
-                            Ui(delegate{
-                                if(token.IsCancellationRequested||paused)return;
-                                if(dictationSegment)StopDictation(true);
-                                else{
-                                    retryCommand=false;commandRetries=0;
-                                    Flash("কোনো কথা ধরা পড়েনি—ঢেউ জ্বললে কমান্ড বলো; না হলে ‘হ্যালো আলফ্রেড’ বলে আবার ডাকো",false);
-                                }
-                            });
-                            return;
-                        }
-                        rec.Save(audio);capture=null;
-                    }
-                    commandStage="transcribing";Ui(delegate{SetState("processing","বাংলা / English কমান্ড বুঝছি…");});
-                    string text=Transcribe(audio,output,token,language,dictationSegment);
+                string id=Guid.NewGuid().ToString("N"),audio=Path.Combine(Program.Temp,"speech-"+id+".wav"),output=Path.Combine(Program.Temp,"speech-"+id);
+                try{
+                    SpeechSession current=speechSession;if(current==null){current=wakeEndSample>=0?speechInput.BeginSession(wakeEndSample):speechInput.BeginSession();wakeEndSample=-1;speechSession=current;}
+                    SpeechSegment rec=current.Next(token,dictationSegment?10:15,dictationSegment?0.85:0.75,dictationSegment?90:8);
+                    if(rec==null){Ui(delegate{if(token.IsCancellationRequested||paused)return;if(dictationSegment)StopDictation(true);else{retryCommand=commandRetries<1;Flash(retryCommand?"কথা ধরা পড়েনি—মাইক খোলা আছে, আবার বলো":"কথা আসেনি—আবার ডাকলে শুনব",false);}});return;}
+                    lastCapturePeak=rec.PeakLevel;lastCaptureDuration=rec.DurationMs;lastCaptureVoiceFrames=rec.VoiceFrames;lastCaptureHeard=rec.Heard;if(token.IsCancellationRequested||closing)return;
+                    rec.Save(audio);commandStage="transcribing";Ui(delegate{SetState("processing",dictationSegment?"লেখা তুলছি—বলা চালিয়ে যেতে পারো":"কমান্ড বুঝছি…");});
+                    string text=speech.Transcribe(audio,output,token,language,dictationSegment);if(!dictationSegment)text=StripWakePrefix(text);
                     Ui(delegate{
-                        if(token.IsCancellationRequested||paused||closing)return;
-                        lastHeard=text;
-                        Intent parsed=dictationSegment?VoiceActions.ParseDictation(text):Commands.Parse(text);
-                        if(parsed==null){StopDictation(true);return;}
-                        if(!dictationSegment&&parsed.Kind=="unknown"){
-                            if(commandRetries<2)retryCommand=true;
-                            string excerpt=text.Trim();
-                            if(excerpt.Length>100)excerpt=excerpt.Substring(0,100)+"…";
-                            if(excerpt.Length>0)parsed.Label="শুনেছি “"+excerpt+"”। কমান্ডটা বুঝিনি, আবার বলো।";
-                        }else if(!dictationSegment){
-                            retryCommand=false;
-                            commandRetries=0;
-                        }
-                        lastCommandKind=parsed.Kind;commandStage="intent parsed";HandleIntent(parsed);
+                        if(token.IsCancellationRequested||paused||closing)return;lastHeard=text;Intent parsed=dictationSegment?VoiceActions.ParseDictation(text):Commands.Parse(text);
+                        if(parsed==null){if(dictationSegment)Flash("কথা পরিষ্কার আসেনি—শুনছি, আবার বলো",false);else retryCommand=commandRetries<2;return;}
+                        if(!dictationSegment&&parsed.Kind=="unknown"){retryCommand=commandRetries<2;string excerpt=text.Trim();if(excerpt.Length>100)excerpt=excerpt.Substring(0,100)+"…";parsed.Label=excerpt.Length>0?"শুনেছি “"+excerpt+"”। আবার বলো—শুনছি।":"কথা পরিষ্কার আসেনি—আবার বলো।";Flash(parsed.Label,false);}
+                        else{retryCommand=false;commandRetries=0;HandleIntent(parsed);}lastCommandKind=parsed.Kind;commandStage="intent parsed";
                     });
-                } catch(OperationCanceledException){}
-                catch(Exception ex){Ui(delegate{
-                    if(token.IsCancellationRequested||paused)return;
-                    if(dictationSegment)StopDictation(false);
-                    commandStage="error";
-                    Flash("সমস্যা: "+ex.Message,false);
-                    SpeakResponse(new Intent("error","",""),false);
-                });}
-                finally{
-                    capture=null;TryDelete(audio);TryDelete(output+".txt");
-                    Ui(delegate{busy=false;audioLevel=0;if(job!=null){job.Dispose();job=null;}ContinueListening();});
-                }
+                }catch(OperationCanceledException){}
+                catch(Exception ex){Ui(delegate{if(token.IsCancellationRequested||paused)return;if(dictationSegment)StopDictation(false);commandStage="error";Flash("Voice: "+ex.Message,false);});}
+                finally{TryDelete(audio);TryDelete(output+".txt");Ui(delegate{busy=false;audioLevel=0;if(job!=null){job.Dispose();job=null;}if(!dictating&&!retryCommand)EndSpeechSession();ContinueListening();});}
             });
         }
-        string Transcribe(string audio,string output,CancellationToken token,string language,bool dictationSegment){
-            ProcessStartInfo si=new ProcessStartInfo{FileName=Path.Combine(Program.Root,"engine","Release","whisper-cli.exe"),WorkingDirectory=Program.Temp,UseShellExecute=false,CreateNoWindow=true,RedirectStandardError=true,RedirectStandardOutput=true};
-            if(language!="bn"&&language!="en")language="auto";
-            si.Arguments="-m \""+Path.Combine(Program.Root,"models","ggml-bengali-q5_1.bin")+"\" -f \""+audio+"\" -l "+language+" -t 8 -p 1 -nt -np -otxt -of \""+output+"\" -ng -bs 1 -bo 1";
-            si.EnvironmentVariables["TEMP"]=Program.Temp;si.EnvironmentVariables["TMP"]=Program.Temp;
-            using(Process p=new Process()){
-                p.StartInfo=si;StringBuilder error=new StringBuilder();p.ErrorDataReceived+=delegate(object s,DataReceivedEventArgs e){if(e.Data!=null&&error.Length<4000)error.AppendLine(e.Data);};p.OutputDataReceived+=delegate{};
-                transcriber=p;p.Start();try{p.PriorityClass=ProcessPriorityClass.BelowNormal;}catch{}p.BeginErrorReadLine();p.BeginOutputReadLine();
-                Stopwatch watch=Stopwatch.StartNew();while(!p.WaitForExit(100)){if(token.IsCancellationRequested||closing||watch.Elapsed.TotalSeconds>75){
-                    try{p.Kill();p.WaitForExit(2000);}catch{}
-                    if(token.IsCancellationRequested||closing)throw new OperationCanceledException();
-                    throw new TimeoutException("ভাষা বোঝার ইঞ্জিন সময়মতো উত্তর দেয়নি।");
-                }}
-                p.WaitForExit();transcriber=null;if(p.ExitCode!=0)throw new Exception("ভাষা বোঝার ইঞ্জিন চালু হয়নি ("+p.ExitCode+")");
-            }
-            string result=File.Exists(output+".txt")?File.ReadAllText(output+".txt",Encoding.UTF8).Trim():"";
-            result=System.Text.RegularExpressions.Regex.Replace(result,@"\[(?:blank_audio|music|silence)\]|\((?:music|silence|blank)\)","",System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
-            return result;
-        }
+        public static string StripWakePrefix(string text){return System.Text.RegularExpressions.Regex.Replace(text??"",@"^(?:(?:hello|hey|okay|ok|হ্যালো|হেলো|হেই|ওকে)\s+)?(?:alfred|আলফ্রেড|অ্যালফ্রেড)[,।.!?\s]*(?:(?:bhai|vai|ভাই)[,।.!?\s]+)?","",System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();}
         static void TryDelete(string f){try{if(File.Exists(f))File.Delete(f);}catch{}}
         void DraftAction(Intent i){
             if(inputBusy||screenshotBusy){Flash("আগের কাজ শেষ হলে আবার বলো",false);return;}
@@ -368,13 +285,14 @@ namespace Alfred {
                     inputBusy=false;
                     if(closing||paused)return;
                     if(good&&i.Kind=="dictation-start"){
-                        dictating=true;
+                        EndSpeechSession();dictating=true;
                         dictationLanguage=i.Value;
+                        if(speechInput!=null)speechSession=speechInput.BeginSession();
                         result="চ্যাটের খসড়া লেখা শুরু। স্বাভাবিকভাবে বলো—বক্সে উঠবে, পাঠানো হবে না। থামাতে বলো ‘চ্যাটের খসড়া থামাও’।";
                     }
                     if(!good&&dictating)StopDictation(false);
                     Flash(result,good);
-                    if(!dictating||i.Kind=="dictation-start")SpeakResponse(i,good);
+                    if(!dictating&&i.Kind!="dictation-start")SpeakResponse(i,good);
                     ContinueListening();
                 });
             });
@@ -400,8 +318,9 @@ namespace Alfred {
             });
         }
         void HandleIntent(Intent i){
+            if(i.Kind=="dictation-send"){dictating=false;EndSpeechSession();draft.EndDictation();DraftAction(new Intent("draft-send","","পাঠানোর ফল যাচাই করছি…"));return;}
             if(i.Kind=="dictation-stop"){StopDictation(true);return;}
-            if(i.Kind=="dictation-edit-unknown"){Flash("এডিট কমান্ডটি বুঝিনি। আবার বলো।",false);SpeakResponse(i,false);return;}
+            if(i.Kind=="dictation-edit-unknown"){Flash("এডিট কমান্ডটি বুঝিনি। আবার বলো।",false);return;}
             if(i.Kind=="dictation-start"||i.Kind=="chat-select"||i.Kind=="chat-write"||i.Kind.StartsWith("draft-",StringComparison.Ordinal)){DraftAction(i);return;}
             try{
                 switch(i.Kind){
@@ -510,11 +429,15 @@ namespace Alfred {
             });
         }
         void Flash(string text,bool good){lastResult=text;flashUntil=DateTime.UtcNow.AddSeconds(2);SetState(good?"success":"notice",text);}
+        void SetSpeechLanguage(string language){speechLanguage=language;File.WriteAllText(Path.Combine(Program.Data,"speech-language.ini"),language,Encoding.UTF8);Flash(language=="bn"?"বাংলা + English শব্দ: বাংলা মোড":language=="en"?"English speech mode":"বাংলা / English স্বয়ংক্রিয় মোড",true);}
         void ShowOptions(){
             menu.Items.Clear();menu.Items.Add(new ToolStripMenuItem("Alfred · "+(paused?"মাইক বন্ধ":busy?"কাজ করছি":"ডাকের অপেক্ষায়")){Enabled=false});menu.Items.Add(new ToolStripSeparator());
             AddMenu("এখন কথা বলো  ·  Ctrl+Alt+A",delegate{BeginListen();},!busy&&!paused);
             AddMenu("Alfred-এর কণ্ঠ শুনো",delegate{SpeakResponse(new Intent("voice-preview","",""),true);},!busy&&!inputBusy&&!screenshotBusy);
             AddMenu((paused?"মাইক আবার চালু করো":"মাইক বন্ধ রাখো")+"  ·  Ctrl+Alt+M",delegate{if(paused)Resume();else Pause();},true);
+            AddMenu("ভাষা: বাংলা / English নিজে শনাক্ত করো"+(speechLanguage=="auto"?" ✓":""),delegate{SetSpeechLanguage("auto");},!busy&&!dictating);
+            AddMenu("ভাষা: বাংলা প্রাধান্য"+(speechLanguage=="bn"?" ✓":""),delegate{SetSpeechLanguage("bn");},!busy&&!dictating);
+            AddMenu("ভাষা: English"+(speechLanguage=="en"?" ✓":""),delegate{SetSpeechLanguage("en");},!busy&&!dictating);
             AddMenu("বাংলা / English কমান্ড ও অবস্থা…",ShowPanel,true);
             AddMenu("সব কমান্ডের নির্দেশনা খোলো",delegate{Launch(Path.Combine(Environment.SystemDirectory,"notepad.exe"),"\""+Path.Combine(Program.Root,"COMMANDS-BN.txt")+"\"");},true);
             AddMenu("তোমার নোট খোলো",delegate{HandleIntent(new Intent("notes-open","","নোট খোলা হচ্ছে"));},true);
@@ -533,61 +456,26 @@ namespace Alfred {
             Label heading=new Label{Text="Alfred",Font=new Font("Segoe UI",23,FontStyle.Bold),Bounds=new Rectangle(24,14,460,48),ForeColor=Color.White};
             panelState=new Label{Text=message,Bounds=new Rectangle(26,68,454,46),ForeColor=Color.FromArgb(155,223,224)};
             Label instructions=new Label{Text="১. ‘হ্যালো আলফ্রেড’ / ‘হেই আলফ্রেড’ / ‘ওকে আলফ্রেড’ বলো।\n২. নিউক্লিয়াস উজ্জ্বল হলে বাংলা বা English কমান্ড বলো।\n৩. কথার জোরে ঢেউ বাড়বে; বলা শেষ হলে একটু থামো।",Bounds=new Rectangle(26,118,460,88)};
-            Label examples=new Label{Text="‘ক্যালকুলেটর খোলো’    ·    ‘নোটপ্যাড খোলো’\n‘ক্রোম খোলো’    ·    ‘open Google Chrome’\n‘open chat with Ayesha’ · ‘চ্যাট খোলো রিমা’\n‘চ্যাটে লেখা শুরু করো’ → কথা খসড়ায় উঠবে\n‘চ্যাটের খসড়া থামাও’ → দেখে এডিট করো\n‘এবার পাঠাও’ বললেই কেবল মেসেজ পাঠায়\n‘ভলিউম কমাও’    ·    ‘কয়টা বাজে’",Bounds=new Rectangle(26,210,460,155),ForeColor=Color.FromArgb(205,211,225)};
+            Label examples=new Label{Text="‘ক্যালকুলেটর খোলো’    ·    ‘নোটপ্যাড খোলো’\n‘ক্রোম খোলো’    ·    ‘open Google Chrome’\n‘open chat with Ayesha’ · ‘চ্যাট খোলো রিমা’\n‘চ্যাটে লেখা শুরু করো’ → কথা খসড়ায় উঠবে\n‘শেষ শব্দটা মুছো’ → লেখাটা সংশোধন করো\n‘এবার পাঠাও’ বললেই কেবল মেসেজ পাঠায়\n‘ভলিউম কমাও’    ·    ‘কয়টা বাজে’",Bounds=new Rectangle(26,210,460,155),ForeColor=Color.FromArgb(205,211,225)};
             panelHeard=new Label{Text=(lastHeard.Length==0?"শেষ কমান্ড: —":"শুনেছি: "+lastHeard)+"\n"+lastResult,Bounds=new Rectangle(26,370,460,50),AutoEllipsis=true};
             panelInput=new TextBox{AccessibleName="বাংলা / English কমান্ড",Bounds=new Rectangle(26,426,340,30),BackColor=Color.FromArgb(38,43,54),ForeColor=Color.White,BorderStyle=BorderStyle.FixedSingle};
             Button send=new Button{Text="চালাও",Bounds=new Rectangle(376,424,108,32),FlatStyle=FlatStyle.Flat};send.Click+=delegate{if(!busy){lastHeard=panelInput.Text;HandleIntent(Commands.Parse(panelInput.Text));}};panelInput.KeyDown+=delegate(object s,KeyEventArgs e){if(e.KeyCode==Keys.Enter){send.PerformClick();e.SuppressKeyPress=true;}};
             Button listen=new Button{Text="কথা বলো",Bounds=new Rectangle(26,474,140,34),FlatStyle=FlatStyle.Flat};listen.Click+=delegate{BeginListen();};
             panelMic=new Button{Text=paused?"মাইক চালু করো":"মাইক বন্ধ করো",Bounds=new Rectangle(180,474,146,34),FlatStyle=FlatStyle.Flat};panelMic.Click+=delegate{if(paused)Resume();else Pause();};
             Button hide=new Button{Text="উইন্ডো বন্ধ",Bounds=new Rectangle(340,474,144,34),FlatStyle=FlatStyle.Flat};hide.Click+=delegate{panel.Close();};
-            Label footer=new Label{Text="সম্পূর্ণ অফলাইন · অডিও / কথার ইতিহাস রাখা হয় না · F:\\Alfred",Bounds=new Rectangle(26,520,460,25),Font=new Font("Nirmala UI",8),ForeColor=Color.FromArgb(145,153,172)};
+            Label footer=new Label{Text="Local wake + neural VAD + GPU speech · F:\\Alfred",Bounds=new Rectangle(26,520,460,25),Font=new Font("Nirmala UI",8),ForeColor=Color.FromArgb(145,153,172)};
             panel.Controls.AddRange(new Control[]{heading,panelState,instructions,examples,panelHeard,panelInput,send,listen,panelMic,hide,footer});panel.Show();panel.Activate();
         }
         void Render(){
             if(!IsHandleCreated||closing||overlayHidden)return;
-            Graphics g=surfaceGraphics;{
-                g.Clear(Color.Transparent);
-                const float center=16;
-                bool active=phase=="activating"||phase=="recording"||phase=="processing"||phase=="speaking";
-                // Keep the idle ribbon visibly drifting; recording speeds it up again.
-                double t=visualClock.Elapsed.TotalSeconds*(active?1.85:1.55);
-                float target=phase=="recording"?Math.Min(1,audioLevel/22f):phase=="activating"?0.18f:0;
-                visualLevel+=(target>visualLevel?0.5f:0.16f)*(target-visualLevel);
-                float voice=active?visualLevel:0;
-                using(SolidBrush hitArea=new SolidBrush(Color.FromArgb(1,0,0,0)))g.FillEllipse(hitArea,0,0,32,32);
-                Color[] palette=WavePalette;
-                for(int strand=0;strand<22;strand++){
-                    double offset=strand*0.155;
-                    PointF[] points=wavePoints;
-                    for(int j=0;j<points.Length;j++){
-                        double a=j*Math.PI*2/(points.Length-1);
-                        double drift=0.35*Math.Sin(t*0.61+offset)+t*0.65;
-                        double wave=Math.Sin(a*3+offset+drift)*1.6+Math.Sin(a*2-offset*0.7-t*0.47)*1.2+Math.Sin(a*5+offset+t*0.83)*0.25;
-                        float r=9.2f+voice*2.15f+(float)wave*(0.65f+voice*0.55f)+(float)Math.Sin(a*9+t*15-offset)*voice*0.55f;
-                        r=Math.Max(4.5f,Math.Min(15.1f,r));
-                        points[j]=new PointF(center+(float)Math.Cos(a)*r,center+(float)Math.Sin(a)*r);
-                    }
-                    Color color=palette[Math.Min(palette.Length-1,strand*palette.Length/22)];
-                    int alpha=paused?65:active?195+(int)(voice*60):hover||menuOpen?230:165;
-                    if(active&&strand%5==0)using(Pen glow=new Pen(Color.FromArgb(35,color),0.65f))g.DrawLines(glow,points);
-                    using(Pen thread=new Pen(Color.FromArgb(alpha,color),active?0.13f:0.105f))g.DrawLines(thread,points);
-                }
-                if(active){
-                    float beat=(float)(0.5+0.5*Math.Sin(t*5));
-                    for(int layer=7;layer>=1;layer--){float radius=0.85f+layer*(0.37f+beat*0.035f+voice*0.25f);using(SolidBrush glow=new SolidBrush(Color.FromArgb(10+layer*2,47,187,255)))g.FillEllipse(glow,center-radius,center-radius,radius*2,radius*2);}
-                    float coreSize=1.15f+voice*0.45f;using(SolidBrush core=new SolidBrush(Color.FromArgb(255,155,233,255)))g.FillEllipse(core,center-coreSize,center-coreSize,coreSize*2,coreSize*2);
-                    float lightSize=0.65f+voice*0.25f;using(SolidBrush light=new SolidBrush(Color.White))g.FillEllipse(light,center-lightSize,center-lightSize,lightSize*2,lightSize*2);
-                }else{
-                    using(SolidBrush core=new SolidBrush(Color.FromArgb(paused?115:190,110,137,159)))g.FillEllipse(core,center-0.8f,center-0.8f,1.6f,1.6f);
-                }
-                if(phase=="error")using(Pen warning=new Pen(Color.FromArgb(200,255,160,95),0.2f))g.DrawArc(warning,1,1,30,30,225,90);
-                Native.UpdateBitmap(Handle,surface,Left,Top);
-            }
+            float target=(phase=="recording"||dictating)?Math.Min(1,audioLevel/22f):phase=="activating"?0.18f:0;
+            visualLevel+=(target>visualLevel?0.50f:0.16f)*(target-visualLevel);
+            orbVisual.Draw(surfaceGraphics,visualClock.Elapsed.TotalSeconds,phase,visualLevel,paused,hover||menuOpen);
+            Native.UpdateBitmap(Handle,surface,Left,Top);
         }
         void OnClosing(object sender,FormClosingEventArgs e){
-            if(closing)return;SavePosition();closing=true;cancelJob=true;if(job!=null)job.Cancel();timer.Stop();Native.UnregisterHotKey(Handle,1);Native.UnregisterHotKey(Handle,2);DisposeWake();
-            try{if(transcriber!=null&&!transcriber.HasExited)transcriber.Kill();}catch{}
-            if(panel!=null&&!panel.IsDisposed)panel.Close();tray.Visible=false;Icon trayGlyph=tray.Icon;tray.Dispose();trayGlyph.Dispose();menu.Dispose();tip.Dispose();timer.Dispose();surfaceGraphics.Dispose();surface.Dispose();Program.PanelEvent.Dispose();Program.ListenEvent.Dispose();Program.QuitEvent.Dispose();Program.PreviewEvent.Dispose();
+            if(closing)return;SavePosition();closing=true;if(job!=null)job.Cancel();timer.Stop();Native.UnregisterHotKey(Handle,1);Native.UnregisterHotKey(Handle,2);CloseSpeechInput();speech.Dispose();
+            if(panel!=null&&!panel.IsDisposed)panel.Close();tray.Visible=false;Icon trayGlyph=tray.Icon;tray.Dispose();trayGlyph.Dispose();menu.Dispose();tip.Dispose();timer.Dispose();orbVisual.Dispose();surfaceGraphics.Dispose();surface.Dispose();Program.PanelEvent.Dispose();Program.ListenEvent.Dispose();Program.QuitEvent.Dispose();Program.PreviewEvent.Dispose();
             try{File.WriteAllText(Path.Combine(Program.Data,"status.json"),"{\"state\":\"stopped\",\"microphonePaused\":true}",Encoding.UTF8);}catch{}
         }
     }

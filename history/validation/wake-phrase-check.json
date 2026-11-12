@@ -1,0 +1,20 @@
+[
+  {
+    "Input": "Alfred",
+    "Recognized": "Alfred",
+    "Confidence": 0.9530681,
+    "Accepted": false
+  },
+  {
+    "Input": "hello Alfred",
+    "Recognized": "hello Alfred",
+    "Confidence": 0.9515451,
+    "Accepted": true
+  },
+  {
+    "Input": "hey Alfred",
+    "Recognized": "hey Alfred",
+    "Confidence": 0.9175808,
+    "Accepted": true
+  }
+]
