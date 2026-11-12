@@ -41,4 +41,4 @@ The script compiles `source/*.cs`, runs the app's built-in command checks, then 
 
 ## Model and dependency licensing
 
-The model binaries and `engine/Release/` contain third-party artifacts. Their original upstream provenance/license notices were not present in this project folder when this repository was prepared. This repository is private; verify upstream notices before making it public or redistributing those artifacts.
+The model binaries and `engine/Release/` contain third-party artifacts. The local project folder did not include provenance/license records for every binary, especially the Bengali-tuned model. Check the upstream model card and notices before redistributing those artifacts. The Alfred source has no project-level `LICENSE` file, so repository visibility alone does not grant reuse rights.

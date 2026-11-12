@@ -87,4 +87,4 @@ Preserve the user's saved icon position and microphone setting. Do not automatic
 
 ## GitHub publishing preference
 
-After a major Alfred feature or fix, ask the user whether they want the changes pushed to GitHub. When the user asks about publishing/syncing, remind them that I can prepare and push the project through their GitHub account. Keep the Alfred repository private unless the user asks to make it public.
+After a major Alfred feature or fix, ask the user whether they want the changes pushed to GitHub. When the user asks about publishing/syncing, remind them that I can prepare and push the project through their GitHub account. The Alfred repository is public per the user request on 2026-11-12; keep this visibility until the user changes it.
